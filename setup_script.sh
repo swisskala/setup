@@ -339,12 +339,12 @@ main() {
     install_essential_software
     configure_aliases
     configure_locale
-    add_cmds_function
+    add_commandman_alias
     configure_prompt
     
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new aliases and prompt!"
-    print_status "Type 'cmds' for a quick reference of installed tools."
+    print_status "Type 'commandman' for a quick reference of installed tools."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
