@@ -327,6 +327,29 @@ EOF
     print_status "Prompt format: [blue]username@[red]hostname:path$ "
 }
 
+# Step 8: Add cmds shortcut alias
+add_cmds_shortcut() {
+    print_status "Step 8: Adding cmds shortcut alias..."
+    
+    local bashrc="$HOME/.bashrc"
+    
+    # Check if cmds alias already exists
+    if grep -q "alias cmds=" "$bashrc"; then
+        print_warning "cmds alias already exists in .bashrc, skipping..."
+        return
+    fi
+    
+    print_status "Adding cmds shortcut alias to .bashrc..."
+    
+    # Add the cmds alias
+    echo "" >> "$bashrc"
+    echo "# Shortcut alias for commandman - added by setup script" >> "$bashrc"
+    echo "alias cmds='commandman'" >> "$bashrc"
+    
+    print_success "cmds shortcut alias added successfully"
+    print_status "Usage: Type 'cmds' or 'commandman' to see quick reference of installed tools"
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -341,10 +364,11 @@ main() {
     configure_locale
     add_commandman_alias
     configure_prompt
+    add_cmds_shortcut
     
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new aliases and prompt!"
-    print_status "Type 'commandman' for a quick reference of installed tools."
+    print_status "Type 'cmds' or 'commandman' for a quick reference of installed tools."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
