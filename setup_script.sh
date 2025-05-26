@@ -82,7 +82,7 @@ install_yay() {
         # Clean up any existing yay directory first
         if [[ -d "/tmp/yay" ]]; then
             print_status "Cleaning up previous yay installation directory..."
-            rm -rf /tmp/yay
+            sudo rm -rf /tmp/yay
         fi
         
         # Clone and build yay
