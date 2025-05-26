@@ -272,6 +272,33 @@ EOF
     print_status "Usage: Type 'commandman' to see quick reference of installed tools"
 }
 
+# Step 7: Configure colorful bash prompt
+configure_prompt() {
+    print_status "Step 7: Configuring colorful bash prompt..."
+    
+    local bashrc="$HOME/.bashrc"
+    local prompt_line="PS1='\[\e[1;34m\]\u\[\e[0m\]@\[\e[1;31m\]\h\[\e[0m\]:\w\$ '"
+    
+    # Check if custom PS1 already exists
+    if grep -q "PS1.*\\\\e\[" "$bashrc"; then
+        print_warning "Custom colored PS1 already exists in .bashrc, skipping..."
+        return
+    fi
+    
+    print_status "Adding colorful prompt to .bashrc..."
+    
+    # Add the colored prompt
+    cat >> "$bashrc" << EOF
+
+# Colorful bash prompt - added by setup script
+# Format: [blue]username[reset]@[red]hostname[reset]:path$ 
+$prompt_line
+EOF
+    
+    print_success "Colorful bash prompt configured successfully"
+    print_status "Prompt format: [blue]username@[red]hostname:path$ "
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -285,9 +312,10 @@ main() {
     configure_aliases
     configure_locale
     add_commandman_alias
+    configure_prompt
     
     print_success "Setup script completed successfully!"
-    print_status "Remember to run 'source ~/.bashrc' to apply the new aliases!"
+    print_status "Remember to run 'source ~/.bashrc' to apply the new aliases and prompt!"
     print_status "Type 'commandman' for a quick reference of installed tools."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
