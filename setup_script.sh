@@ -223,52 +223,52 @@ add_commandman_alias() {
     local bashrc="$HOME/.bashrc"
     
     # Check if commandman alias already exists
-    if grep -q "alias commandman=" "$bashrc"; then
+    if grep -q "commandman" "$bashrc"; then
         print_warning "commandman alias already exists in .bashrc, skipping..."
         return
     fi
     
-    print_status "Adding commandman alias to .bashrc..."
+    print_status "Adding commandman function to .bashrc..."
     
-    # Add the commandman alias
+    # Add the commandman function instead of alias
     cat >> "$bashrc" << 'EOF'
 
 # Mini manpages for installed commands - added by setup script
-alias commandman='echo "
-=== INSTALLED COMMANDS - QUICK REFERENCE ===
-
-TERMINAL & SYSTEM:
-  kitty         - Modern GPU-accelerated terminal emulator
-  btop          - Interactive system monitor (CPU, memory, processes)
-  ncdu          - NCurses disk usage analyzer - find what uses space
-
-FILE OPERATIONS:
-  unzip         - Extract ZIP archives
-  lsd           - Modern ls with colors and icons
-  
-FILE LISTING ALIASES:
-  la            - List all files with details (ls -ahl --color=auto)
-  ll            - List files with details (ls -lh --color=auto)  
-  ls            - List files with colors (ls --color=auto)
-  lsd           - List with lsd in detailed format (lsd -lh)
-  lsda          - List all files with lsd detailed (lsd -alh)
-
-DESKTOP ENVIRONMENT:
-  startw        - Start KDE Plasma Wayland session
-  stopx         - Exit i3 window manager
-
-USAGE EXAMPLES:
-  btop                    # Monitor system resources
-  ncdu /home              # Analyze disk usage in /home
-  lsd                     # Pretty file listing
-  kitty &                 # Launch new terminal
-  unzip archive.zip       # Extract zip file
-  
-Type 'man <command>' for full documentation.
-"'
+commandman() {
+    echo "=== INSTALLED COMMANDS - QUICK REFERENCE ==="
+    echo ""
+    echo "TERMINAL & SYSTEM:"
+    echo "  kitty         - Modern GPU-accelerated terminal emulator"
+    echo "  btop          - Interactive system monitor (CPU, memory, processes)"
+    echo "  ncdu          - NCurses disk usage analyzer - find what uses space"
+    echo ""
+    echo "FILE OPERATIONS:"
+    echo "  unzip         - Extract ZIP archives"
+    echo "  lsd           - Modern ls with colors and icons"
+    echo ""
+    echo "FILE LISTING ALIASES:"
+    echo "  la            - List all files with details (ls -ahl --color=auto)"
+    echo "  ll            - List files with details (ls -lh --color=auto)"
+    echo "  ls            - List files with colors (ls --color=auto)"
+    echo "  lsd           - List with lsd in detailed format (lsd -lh)"
+    echo "  lsda          - List all files with lsd detailed (lsd -alh)"
+    echo ""
+    echo "DESKTOP ENVIRONMENT:"
+    echo "  startw        - Start KDE Plasma Wayland session"
+    echo "  stopx         - Exit i3 window manager"
+    echo ""
+    echo "USAGE EXAMPLES:"
+    echo "  btop                    # Monitor system resources"
+    echo "  ncdu /home              # Analyze disk usage in /home"
+    echo "  lsd                     # Pretty file listing"
+    echo "  kitty &                 # Launch new terminal"
+    echo "  unzip archive.zip       # Extract zip file"
+    echo ""
+    echo "Type 'man <command>' for full documentation."
+}
 EOF
     
-    print_success "commandman alias added successfully"
+    print_success "commandman function added successfully"
     print_status "Usage: Type 'commandman' to see quick reference of installed tools"
 }
 
