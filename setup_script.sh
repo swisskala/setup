@@ -98,6 +98,75 @@ install_yay() {
     fi
 }
 
+# Step 3: Install essential software
+install_essential_software() {
+    print_status "Step 3: Installing essential software (kitty, ncdu, unzip, btop, lsd)..."
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        print_status "Installing software via apt..."
+        sudo apt install -y kitty ncdu unzip btop lsd
+        print_success "Essential software installed successfully (apt)"
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Installing software via pacman..."
+        sudo pacman -S --needed --noconfirm kitty ncdu unzip btop lsd
+        print_success "Essential software installed successfully (pacman)"
+    fi
+}
+
+# Step 4: Configure bash aliases
+configure_aliases() {
+    print_status "Step 4: Configuring bash aliases..."
+    
+    local bashrc="$HOME/.bashrc"
+    local aliases=(
+        "alias la='ls -ahl --color=auto'"
+        "alias ll='ls -lh --color=auto'"
+        "alias ls='ls --color=auto'"
+        "alias lsd='lsd -lh'"
+        "alias lsda='lsd -alh'"
+        "alias startw='startplasma-wayland'"
+        "alias stopx='i3-msg exit'"
+    )
+    
+    # Create .bashrc if it doesn't exist
+    if [[ ! -f "$bashrc" ]]; then
+        print_status "Creating .bashrc file..."
+        touch "$bashrc"
+    fi
+    
+    print_status "Checking and adding aliases to .bashrc..."
+    
+    for alias_line in "${aliases[@]}"; do
+        # Extract alias name (everything between 'alias ' and '=')
+        alias_name=$(echo "$alias_line" | sed "s/alias \([^=]*\)=.*/\1/")
+        
+        # Check if alias already exists in .bashrc
+        if grep -q "^alias $alias_name=" "$bashrc"; then
+            print_warning "Alias '$alias_name' already exists in .bashrc, skipping..."
+        else
+            print_status "Adding alias: $alias_name"
+            echo "$alias_line" >> "$bashrc"
+        fi
+    done
+    
+    # Add a comment section if we added any aliases
+    if ! grep -q "# Custom aliases added by setup script" "$bashrc"; then
+        echo "" >> "$bashrc"
+        echo "# Custom aliases added by setup script" >> "$bashrc"
+        # Move the comment above the aliases we just added
+        temp_file=$(mktemp)
+        head -n -$(echo "${aliases[@]}" | wc -w) "$bashrc" > "$temp_file"
+        echo "" >> "$temp_file"
+        echo "# Custom aliases added by setup script" >> "$temp_file"
+        tail -n $(echo "${aliases[@]}" | wc -w) "$bashrc" >> "$temp_file"
+        mv "$temp_file" "$bashrc"
+    fi
+    
+    print_success "Bash aliases configured successfully"
+    print_status "Note: Run 'source ~/.bashrc' or restart your terminal to apply aliases"
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -107,8 +176,11 @@ main() {
     detect_system
     update_system
     install_yay
+    install_essential_software
+    configure_aliases
     
     print_success "Setup script completed successfully!"
+    print_status "Remember to run 'source ~/.bashrc' to apply the new aliases!"
 }
 
 # Run the main function
