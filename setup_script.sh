@@ -79,6 +79,12 @@ install_yay() {
         print_status "Installing prerequisites (base-devel, git)..."
         sudo pacman -S --needed --noconfirm base-devel git
         
+        # Clean up any existing yay directory first
+        if [[ -d "/tmp/yay" ]]; then
+            print_status "Cleaning up previous yay installation directory..."
+            rm -rf /tmp/yay
+        fi
+        
         # Clone and build yay
         print_status "Cloning yay repository..."
         cd /tmp
