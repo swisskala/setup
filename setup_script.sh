@@ -123,9 +123,9 @@ install_essential_software() {
     fi
 }
 
-# Step 4: Configure bash aliases
+# Step 4: Configure bash aliases and functions
 configure_aliases() {
-    print_status "Step 4: Configuring bash aliases..."
+    print_status "Step 4: Configuring bash aliases and functions..."
     
     local bashrc="$HOME/.bashrc"
     local aliases=(
@@ -159,6 +159,22 @@ configure_aliases() {
         fi
     done
     
+    # Add cd function that auto-lists with lsd
+    print_status "Adding enhanced cd function..."
+    if grep -q "cd() {" "$bashrc"; then
+        print_warning "Custom cd function already exists in .bashrc, skipping..."
+    else
+        print_status "Adding cd function with auto-listing..."
+        cat >> "$bashrc" << 'EOF'
+
+# Enhanced cd function - auto-list directory contents with lsd
+cd() {
+  builtin cd "$@" && lsd -a
+}
+EOF
+        print_success "Enhanced cd function added"
+    fi
+    
     # Add a comment section if we added any aliases
     if ! grep -q "# Custom aliases added by setup script" "$bashrc"; then
         echo "" >> "$bashrc"
@@ -172,8 +188,8 @@ configure_aliases() {
         mv "$temp_file" "$bashrc"
     fi
     
-    print_success "Bash aliases configured successfully"
-    print_status "Note: Run 'source ~/.bashrc' or restart your terminal to apply aliases"
+    print_success "Bash aliases and functions configured successfully"
+    print_status "Note: Run 'source ~/.bashrc' or restart your terminal to apply changes"
 }
 
 # Step 5: Configure UTF-8 locale
