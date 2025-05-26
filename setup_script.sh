@@ -339,7 +339,7 @@ main() {
     install_essential_software
     configure_aliases
     configure_locale
-    add_cmds_alias
+    add_cmds_function
     configure_prompt
     
     print_success "Setup script completed successfully!"
