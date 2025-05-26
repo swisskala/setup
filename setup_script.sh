@@ -167,6 +167,111 @@ configure_aliases() {
     print_status "Note: Run 'source ~/.bashrc' or restart your terminal to apply aliases"
 }
 
+# Step 5: Configure UTF-8 locale
+configure_locale() {
+    print_status "Step 5: Configuring UTF-8 locale..."
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        print_status "Configuring locale for Debian-based system..."
+        
+        # Check if en_US.UTF-8 is already generated
+        if locale -a | grep -q "en_US.utf8"; then
+            print_warning "en_US.UTF-8 locale already exists, skipping generation..."
+        else
+            print_status "Installing locales package..."
+            sudo apt install -y locales
+            
+            print_status "Generating en_US.UTF-8 locale..."
+            sudo locale-gen en_US.UTF-8
+        fi
+        
+        # Set the locale
+        print_status "Setting system locale to en_US.UTF-8..."
+        sudo update-locale LANG=en_US.UTF-8
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Configuring locale for Arch-based system..."
+        
+        # Check if en_US.UTF-8 is already in locale.gen
+        if grep -q "^en_US.UTF-8" /etc/locale.gen; then
+            print_warning "en_US.UTF-8 already uncommented in locale.gen, skipping..."
+        else
+            print_status "Uncommenting en_US.UTF-8 in /etc/locale.gen..."
+            sudo sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+        fi
+        
+        print_status "Generating locales..."
+        sudo locale-gen
+        
+        # Set the locale in locale.conf
+        print_status "Setting system locale to en_US.UTF-8..."
+        echo "LANG=en_US.UTF-8" | sudo tee /etc/locale.conf > /dev/null
+    fi
+    
+    # Export for current session
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    
+    print_success "UTF-8 locale configured successfully"
+    print_status "Note: You may need to reboot for locale changes to take full effect"
+}
+
+# Step 6: Add commandman alias with mini manpages
+add_commandman_alias() {
+    print_status "Step 6: Adding commandman alias with mini manpages..."
+    
+    local bashrc="$HOME/.bashrc"
+    
+    # Check if commandman alias already exists
+    if grep -q "alias commandman=" "$bashrc"; then
+        print_warning "commandman alias already exists in .bashrc, skipping..."
+        return
+    fi
+    
+    print_status "Adding commandman alias to .bashrc..."
+    
+    # Add the commandman alias
+    cat >> "$bashrc" << 'EOF'
+
+# Mini manpages for installed commands - added by setup script
+alias commandman='echo "
+=== INSTALLED COMMANDS - QUICK REFERENCE ===
+
+TERMINAL & SYSTEM:
+  kitty         - Modern GPU-accelerated terminal emulator
+  btop          - Interactive system monitor (CPU, memory, processes)
+  ncdu          - NCurses disk usage analyzer - find what uses space
+
+FILE OPERATIONS:
+  unzip         - Extract ZIP archives
+  lsd           - Modern ls with colors and icons
+  
+FILE LISTING ALIASES:
+  la            - List all files with details (ls -ahl --color=auto)
+  ll            - List files with details (ls -lh --color=auto)  
+  ls            - List files with colors (ls --color=auto)
+  lsd           - List with lsd in detailed format (lsd -lh)
+  lsda          - List all files with lsd detailed (lsd -alh)
+
+DESKTOP ENVIRONMENT:
+  startw        - Start KDE Plasma Wayland session
+  stopx         - Exit i3 window manager
+
+USAGE EXAMPLES:
+  btop                    # Monitor system resources
+  ncdu /home              # Analyze disk usage in /home
+  lsd                     # Pretty file listing
+  kitty &                 # Launch new terminal
+  unzip archive.zip       # Extract zip file
+  
+Type 'man <command>' for full documentation.
+"'
+EOF
+    
+    print_success "commandman alias added successfully"
+    print_status "Usage: Type 'commandman' to see quick reference of installed tools"
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -178,9 +283,13 @@ main() {
     install_yay
     install_essential_software
     configure_aliases
+    configure_locale
+    add_commandman_alias
     
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new aliases!"
+    print_status "Type 'commandman' for a quick reference of installed tools."
+    print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
 # Run the main function
