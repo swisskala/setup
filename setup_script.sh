@@ -136,6 +136,7 @@ configure_aliases() {
         "alias lsda='lsd -alh'"
         "alias startw='startplasma-wayland'"
         "alias stopx='i3-msg exit'"
+        "alias cmds='commandman'"
     )
     
     # Create .bashrc if it doesn't exist
