@@ -100,17 +100,26 @@ install_yay() {
 
 # Step 3: Install essential software
 install_essential_software() {
-    print_status "Step 3: Installing essential software (kitty, ncdu, unzip, btop, lsd)..."
+    print_status "Step 3: Installing essential software (kitty, ncdu, unzip, btop, lsd, tealdeer)..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Installing software via apt..."
-        sudo apt install -y kitty ncdu unzip btop lsd
+        sudo apt install -y kitty ncdu unzip btop lsd tealdeer
         print_success "Essential software installed successfully (apt)"
         
     elif [[ "$SYSTEM" == "arch" ]]; then
         print_status "Installing software via pacman..."
-        sudo pacman -S --needed --noconfirm kitty ncdu unzip btop lsd
+        sudo pacman -S --needed --noconfirm kitty ncdu unzip btop lsd tealdeer
         print_success "Essential software installed successfully (pacman)"
+    fi
+    
+    # Initialize tealdeer cache
+    print_status "Initializing tealdeer cache..."
+    if command -v tldr &> /dev/null; then
+        tldr --update
+        print_success "tealdeer cache initialized"
+    else
+        print_warning "tealdeer not found in PATH, skipping cache initialization"
     fi
 }
 
@@ -241,6 +250,7 @@ commandman() {
     echo -e "  \e[1;32mkitty\e[0m         - Modern GPU-accelerated terminal emulator"
     echo -e "  \e[1;32mbtop\e[0m          - Interactive system monitor (CPU, memory, processes)"
     echo -e "  \e[1;32mncdu\e[0m          - NCurses disk usage analyzer - find what uses space"
+    echo -e "  \e[1;32mtealdeer\e[0m      - Fast tldr client for simplified command help (use: tldr)"
     echo ""
     echo -e "\e[1;33mFILE OPERATIONS:\e[0m"
     echo -e "  \e[1;32munzip\e[0m         - Extract ZIP archives"
@@ -263,8 +273,10 @@ commandman() {
     echo -e "  \e[1;34mlsd\e[0m                     # Pretty file listing"
     echo -e "  \e[1;34mkitty &\e[0m                 # Launch new terminal"
     echo -e "  \e[1;34munzip archive.zip\e[0m       # Extract zip file"
+    echo -e "  \e[1;34mtldr ls\e[0m                 # Quick help for ls command"
+    echo -e "  \e[1;34mtldr --update\e[0m           # Update tldr database"
     echo ""
-    echo -e "\e[1;37mType 'man <command>' for full documentation.\e[0m"
+    echo -e "\e[1;37mType 'man <command>' or 'tldr <command>' for documentation.\e[0m"
 }
 EOF
     
