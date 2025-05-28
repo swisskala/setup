@@ -397,16 +397,19 @@ main() {
     echo "    System Setup Script Starting"
     echo "========================================="
     
+
     detect_system
     update_system
     install_yay
     install_essential_software
+    remove_old_bashrc
+    create_fresh_bashrc
     configure_aliases
     configure_locale
     add_commandman_alias
     configure_prompt
     add_cmds_shortcut
-    
+
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new aliases and prompt!"
     print_status "Type 'cmds' or 'commandman' for a quick reference of installed tools."
