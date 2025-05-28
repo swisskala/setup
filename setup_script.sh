@@ -106,16 +106,16 @@ install_yay() {
 
 # Step 3: Install essential software
 install_essential_software() {
-    print_status "Step 3: Installing essential software (kitty, ncdu, unzip, btop, lsd, tealdeer)..."
+    print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer)..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Installing software via apt..."
-        sudo apt install -y kitty ncdu unzip btop lsd tealdeer
+        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer
         print_success "Essential software installed successfully (apt)"
         
     elif [[ "$SYSTEM" == "arch" ]]; then
         print_status "Installing software via pacman..."
-        sudo pacman -S --needed --noconfirm kitty ncdu unzip btop lsd tealdeer
+        sudo pacman -S --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer
         print_success "Essential software installed successfully (pacman)"
     fi
     
@@ -270,6 +270,7 @@ commandman() {
     echo ""
     echo -e "\e[1;33mTERMINAL & SYSTEM:\e[0m"
     echo -e "  \e[1;32mkitty\e[0m         - Modern GPU-accelerated terminal emulator"
+    echo -e "  \e[1;32mmc\e[0m            - Midnight Commander file manager"
     echo -e "  \e[1;32mbtop\e[0m          - Interactive system monitor (CPU, memory, processes)"
     echo -e "  \e[1;32mncdu\e[0m          - NCurses disk usage analyzer - find what uses space"
     echo -e "  \e[1;32mtealdeer\e[0m      - Fast tldr client for simplified command help (use: tldr)"
@@ -291,12 +292,19 @@ commandman() {
     echo ""
     echo -e "\e[1;33mUSAGE EXAMPLES:\e[0m"
     echo -e "  \e[1;34mbtop\e[0m                    # Monitor system resources"
+    echo -e "  \e[1;34mmc\e[0m                      # Launch Midnight Commander"
     echo -e "  \e[1;34mncdu /home\e[0m              # Analyze disk usage in /home"
     echo -e "  \e[1;34mlsd\e[0m                     # Pretty file listing"
     echo -e "  \e[1;34mkitty &\e[0m                 # Launch new terminal"
     echo -e "  \e[1;34munzip archive.zip\e[0m       # Extract zip file"
     echo -e "  \e[1;34mtldr ls\e[0m                 # Quick help for ls command"
     echo -e "  \e[1;34mtldr --update\e[0m           # Update tldr database"
+    echo ""
+    echo -e "\e[1;33mTAR EXAMPLES:\e[0m"
+    echo -e "  \e[1;34mtar -xzf archive.tar.gz\e[0m # Extract .tar.gz file"
+    echo -e "  \e[1;34mtar -xjf archive.tar.bz2\e[0m# Extract .tar.bz2 file"
+    echo -e "  \e[1;34mtar -czf backup.tar.gz dir/\e[0m# Create .tar.gz archive"
+    echo -e "  \e[1;34mtar -tf archive.tar\e[0m     # List contents without extracting"
     echo ""
     echo -e "\e[1;37mType 'man <command>' or 'tldr <command>' for documentation.\e[0m"
 }
@@ -356,6 +364,107 @@ add_cmds_shortcut() {
     print_status "Usage: Type 'cmds' or 'commandman' to see quick reference of installed tools"
 }
 
+# Step 9: Install and configure Mission Center
+install_mission_center() {
+    print_status "Step 9: Installing and configuring Mission Center..."
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        print_status "Installing Mission Center for Debian-based system..."
+        
+        # Check if Mission Center is already installed
+        if command -v mission-center &> /dev/null; then
+            print_warning "Mission Center is already installed, skipping installation..."
+        else
+            # Install dependencies
+            print_status "Installing Mission Center dependencies..."
+            sudo apt install -y curl wget jq git python3 python3-pip
+            
+            # Download and install Mission Center
+            print_status "Downloading and installing Mission Center..."
+            curl -sSL https://github.com/mission-center/installer/releases/latest/download/install.sh | sudo bash
+            
+            print_success "Mission Center installed successfully"
+        fi
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Installing Mission Center for Arch-based system..."
+        
+        # Check if Mission Center is already installed
+        if command -v mission-center &> /dev/null; then
+            print_warning "Mission Center is already installed, skipping installation..."
+        else
+            # Install dependencies
+            print_status "Installing Mission Center dependencies..."
+            sudo pacman -S --needed --noconfirm curl wget jq git python python-pip
+            
+            # For AUR installation, use yay
+            print_status "Installing Mission Center from AUR..."
+            yay -S --noconfirm mission-center
+            
+            print_success "Mission Center installed successfully"
+        fi
+    fi
+    
+    # Configure Mission Center
+    print_status "Configuring Mission Center..."
+    
+    # Create config directory if it doesn't exist
+    mkdir -p "$HOME/.config/mission-center"
+    
+    # Create basic configuration file if it doesn't exist
+    if [[ ! -f "$HOME/.config/mission-center/config.json" ]]; then
+        print_status "Creating default Mission Center configuration..."
+        cat > "$HOME/.config/mission-center/config.json" << EOF
+{
+    "update_interval": 3600,
+    "log_level": "info",
+    "auto_start": true,
+    "data_directory": "$HOME/.local/share/mission-center",
+    "notifications": {
+        "enabled": true,
+        "sound": true
+    }
+}
+EOF
+        print_success "Default Mission Center configuration created"
+    else
+        print_warning "Mission Center configuration already exists, skipping..."
+    fi
+    
+    # No Mission Center alias to avoid conflict with mc file manager
+    local bashrc="$HOME/.bashrc"
+    
+    # Update commandman function to include Mission Center
+    if grep -q "commandman()" "$bashrc" && ! grep -q "Mission Center" "$bashrc"; then
+        print_status "Updating commandman function to include Mission Center..."
+        
+        # Find the line before the end of the commandman function
+        local line_num=$(grep -n "Type 'man <command>' or 'tldr <command>'" "$bashrc" | cut -d':' -f1)
+        
+        if [[ -n "$line_num" ]]; then
+            # Create a temporary file with the Mission Center section
+            local temp_file=$(mktemp)
+            head -n "$line_num" "$bashrc" > "$temp_file"
+            cat >> "$temp_file" << 'EOF'
+    echo ""
+    echo -e "\e[1;33mMISSION CENTER:\e[0m"
+    echo -e "  \e[1;32mmission-center\e[0m - Mission control and task management tool"
+    echo -e "  \e[1;34mmission-center status\e[0m # Check Mission Center status"
+    echo -e "  \e[1;34mmission-center tasks\e[0m  # List all active tasks"
+    echo -e "  \e[1;34mmission-center start\e[0m  # Start Mission Center service"
+EOF
+            tail -n +"$((line_num+1))" "$bashrc" >> "$temp_file"
+            mv "$temp_file" "$bashrc"
+            print_success "commandman function updated with Mission Center info"
+        else
+            print_warning "Could not find the right location to update commandman function"
+        fi
+    fi
+    
+    print_success "Mission Center installation and configuration completed"
+    print_status "Usage: Type 'mission-center' to start Mission Center"
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -371,10 +480,12 @@ main() {
     add_commandman_alias
     configure_prompt
     add_cmds_shortcut
+    install_mission_center
     
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new aliases and prompt!"
     print_status "Type 'cmds' or 'commandman' for a quick reference of installed tools."
+    print_status "Type 'mission-center' to start Mission Center."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
