@@ -143,7 +143,7 @@ remove_old_bashrc() {
         
         # Delete the old .bashrc file
         print_status "Deleting old .bashrc file..."
-        rm "$bashrc"
+        rm "/home/$USER/.bashrc"
         print_success "Old .bashrc file deleted"
     else
         print_status "No existing .bashrc file found"
