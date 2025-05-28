@@ -129,9 +129,36 @@ install_essential_software() {
     fi
 }
 
-# Step 4: Configure bash aliases and functions
+# Step 4: Create fresh .bashrc with stock configuration
+create_fresh_bashrc() {
+    print_status "Step 4: Creating fresh .bashrc with stock configuration..."
+    
+    local bashrc="$HOME/.bashrc"
+    
+    # Create backup if .bashrc exists
+    if [[ -f "$bashrc" ]]; then
+        local backup_file="$HOME/.bashrc.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$bashrc" "$backup_file"
+        print_status "Backup created: $backup_file"
+        
+        # Delete the old .bashrc file
+        print_status "Deleting old .bashrc file..."
+        rm "$bashrc"
+    fi
+    
+    # Create completely fresh .bashrc with only the stock line
+    print_status "Creating fresh .bashrc with stock configuration..."
+    cat > "$bashrc" << 'EOF'
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+EOF
+    
+    print_success "Fresh .bashrc created from scratch with stock configuration"
+}
+
+# Step 5: Configure bash aliases and functions
 configure_aliases() {
-    print_status "Step 4: Configuring bash aliases and functions..."
+    print_status "Step 5: Configuring bash aliases and functions..."
     
     local bashrc="$HOME/.bashrc"
     local aliases=(
@@ -144,10 +171,13 @@ configure_aliases() {
         "alias stopx='i3-msg exit'"
     )
     
-    # Create .bashrc if it doesn't exist
+    # Create .bashrc if it doesn't exist (should already exist from Step 4)
     if [[ ! -f "$bashrc" ]]; then
-        print_status "Creating .bashrc file..."
-        touch "$bashrc"
+        print_warning ".bashrc should have been created in Step 4, creating now..."
+        cat > "$bashrc" << 'EOF'
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+EOF
     fi
     
     print_status "Checking and adding aliases to .bashrc..."
@@ -181,26 +211,18 @@ EOF
         print_success "Enhanced cd function added"
     fi
     
-    # Add a comment section if we added any aliases
-    if ! grep -q "# Custom aliases added by setup script" "$bashrc"; then
-        echo "" >> "$bashrc"
-        echo "# Custom aliases added by setup script" >> "$bashrc"
-        # Move the comment above the aliases we just added
-        temp_file=$(mktemp)
-        head -n -$(echo "${aliases[@]}" | wc -w) "$bashrc" > "$temp_file"
-        echo "" >> "$temp_file"
-        echo "# Custom aliases added by setup script" >> "$temp_file"
-        tail -n $(echo "${aliases[@]}" | wc -w) "$bashrc" >> "$temp_file"
-        mv "$temp_file" "$bashrc"
-    fi
+    # Don't add comment section since we're working with a fresh .bashrc
+    print_status "Adding custom aliases comment header..."
+    echo "" >> "$bashrc"
+    echo "# Custom aliases added by setup script" >> "$bashrc"
     
     print_success "Bash aliases and functions configured successfully"
     print_status "Note: Run 'source ~/.bashrc' or restart your terminal to apply changes"
 }
 
-# Step 5: Configure UTF-8 locale
+# Step 6: Configure UTF-8 locale
 configure_locale() {
-    print_status "Step 5: Configuring UTF-8 locale..."
+    print_status "Step 6: Configuring UTF-8 locale..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Configuring locale for Debian-based system..."
@@ -247,15 +269,15 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
-# Step 6: Add commandman alias with mini manpages
+# Step 7: Add commandman alias with mini manpages
 add_commandman_alias() {
-    print_status "Step 6: Adding commandman alias with mini manpages..."
+    print_status "Step 7: Adding commandman alias with mini manpages..."
     
     local bashrc="$HOME/.bashrc"
     
-    # Check if commandman alias already exists
+    # Check if commandman alias already exists (shouldn't in fresh .bashrc)
     if grep -q "commandman" "$bashrc"; then
-        print_warning "commandman alias already exists in .bashrc, skipping..."
+        print_warning "commandman function already exists in fresh .bashrc (unexpected), skipping..."
         return
     fi
     
@@ -312,16 +334,16 @@ EOF
     print_status "Usage: Type 'commandman' to see quick reference of installed tools"
 }
 
-# Step 7: Configure colorful bash prompt
+# Step 8: Configure colorful bash prompt
 configure_prompt() {
-    print_status "Step 7: Configuring colorful bash prompt..."
+    print_status "Step 8: Configuring colorful bash prompt..."
     
     local bashrc="$HOME/.bashrc"
     local prompt_line="PS1='\[\e[1;34m\]\u\[\e[0m\]@\[\e[1;31m\]\h\[\e[0m\]:\w\$ '"
     
-    # Check if custom PS1 already exists
+    # Check if custom PS1 already exists (shouldn't in fresh .bashrc)
     if grep -q "PS1.*\\\\e\[" "$bashrc"; then
-        print_warning "Custom colored PS1 already exists in .bashrc, skipping..."
+        print_warning "Custom colored PS1 already exists in fresh .bashrc (unexpected), skipping..."
         return
     fi
     
@@ -339,15 +361,15 @@ EOF
     print_status "Prompt format: [blue]username@[red]hostname:path$ "
 }
 
-# Step 8: Add cmds shortcut alias
+# Step 9: Add cmds shortcut alias
 add_cmds_shortcut() {
-    print_status "Step 8: Adding cmds shortcut alias..."
+    print_status "Step 9: Adding cmds shortcut alias..."
     
     local bashrc="$HOME/.bashrc"
     
-    # Check if cmds alias already exists
+    # Check if cmds alias already exists (shouldn't in fresh .bashrc)
     if grep -q "alias cmds=" "$bashrc"; then
-        print_warning "cmds alias already exists in .bashrc, skipping..."
+        print_warning "cmds alias already exists in fresh .bashrc (unexpected), skipping..."
         return
     fi
     
