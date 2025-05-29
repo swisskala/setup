@@ -205,6 +205,13 @@ copy_kde_shortcuts() {
     
     # Check if KDE shortcuts file exists in the repo
     if [[ -f "/tmp/setup_runner/kglobalshortcutsrc" ]]; then
+        # Create backup if file exists
+        if [[ -f "$HOME/.config/kglobalshortcutsrc" ]]; then
+            local backup_file="$HOME/.config/kglobalshortcutsrc.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/kglobalshortcutsrc" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
         print_status "Copying KDE shortcuts configuration to .config folder..."
         cp "/tmp/setup_runner/kglobalshortcutsrc" "$HOME/.config/kglobalshortcutsrc"
         print_success "KDE shortcuts configuration copied successfully"
