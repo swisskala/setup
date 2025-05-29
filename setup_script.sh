@@ -185,13 +185,13 @@ replace_bashrc() {
     # Force delete the old .bashrc
     rm -f "$HOME/.bashrc"
     
-    # Check if bashrc exists in current directory (from GitHub repo)
-    if [[ -f "bashrc" ]]; then
+    # Check if bashrc exists in the hardcoded path
+    if [[ -f "/tmp/setup_runner/bashrc" ]]; then
         print_status "Copying bashrc from GitHub repo to .bashrc in home directory..."
-        cp "bashrc" "$HOME/.bashrc"
+        cp "/tmp/setup_runner/bashrc" "$HOME/.bashrc"
         print_success ".bashrc replaced with GitHub version"
     else
-        print_error "bashrc file not found in GitHub repo"
+        print_error "bashrc file not found at /tmp/setup_runner/bashrc"
         return 1
     fi
 }
