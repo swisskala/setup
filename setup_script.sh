@@ -104,7 +104,51 @@ install_yay() {
     fi
 }
 
-# Step 3: Install essential software
+# Step 4: Install UbuntuMono Nerd Font
+install_nerd_font() {
+    print_status "Step 4: Installing UbuntuMono Nerd Font..."
+    
+    # Create fonts directory if it doesn't exist
+    mkdir -p "$HOME/.local/share/fonts"
+    
+    # Check if font is already installed
+    if fc-list | grep -q "UbuntuMono Nerd Font"; then
+        print_warning "UbuntuMono Nerd Font already installed, skipping..."
+        return
+    fi
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        print_status "Installing UbuntuMono Nerd Font via package manager..."
+        # Try to install via package first
+        if sudo apt install -y fonts-ubuntu-nerd 2>/dev/null; then
+            print_success "UbuntuMono Nerd Font installed via package manager"
+        else
+            print_status "Package not available, downloading font manually..."
+            install_nerd_font_manual
+        fi
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Installing UbuntuMono Nerd Font via AUR..."
+        if command -v yay &> /dev/null; then
+            if yay -S --needed --noconfirm ttf-ubuntu-nerd 2>/dev/null; then
+                print_success "UbuntuMono Nerd Font installed via AUR"
+            else
+                print_status "AUR package failed, downloading font manually..."
+                install_nerd_font_manual
+            fi
+        else
+            print_status "yay not available, downloading font manually..."
+            install_nerd_font_manual
+        fi
+    fi
+    
+    # Refresh font cache
+    print_status "Refreshing font cache..."
+    fc-cache -fv
+    print_success "Font cache refreshed"
+}
+
+# Step 5: Install essential software
 install_essential_software() {
     print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, mission-center)..."
     
@@ -171,9 +215,9 @@ install_essential_software() {
     fi
 }
 
-# Step 4: Replace .bashrc with version from GitHub repo
+# Step 6: Replace .bashrc with version from GitHub repo
 replace_bashrc() {
-    print_status "Step 4: Replacing .bashrc with version from GitHub repo..."
+    print_status "Step 6: Replacing .bashrc with version from GitHub repo..."
     
     # Create backup if .bashrc exists
     if [[ -f "$HOME/.bashrc" ]]; then
@@ -196,9 +240,9 @@ replace_bashrc() {
     fi
 }
 
-# Step 5: Copy KDE shortcuts configuration
+# Step 7: Copy KDE shortcuts configuration
 copy_kde_shortcuts() {
-    print_status "Step 5: Copying KDE shortcuts configuration..."
+    print_status "Step 7: Copying KDE shortcuts configuration..."
     
     # Create .config directory if it doesn't exist
     mkdir -p "$HOME/.config"
@@ -221,7 +265,32 @@ copy_kde_shortcuts() {
     fi
 }
 
-# Step 6: Configure UTF-8 locale
+# Step 8: Copy kitty configuration
+copy_kitty_config() {
+    print_status "Step 8: Copying kitty configuration..."
+    
+    # Create .config/kitty directory if it doesn't exist
+    mkdir -p "$HOME/.config/kitty"
+    
+    # Check if kitty config file exists in the repo
+    if [[ -f "/tmp/setup_runner/kitty.conf" ]]; then
+        # Create backup if file exists
+        if [[ -f "$HOME/.config/kitty/kitty.conf" ]]; then
+            local backup_file="$HOME/.config/kitty/kitty.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/kitty/kitty.conf" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying kitty configuration to .config/kitty folder..."
+        cp "/tmp/setup_runner/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+        print_success "Kitty configuration copied successfully"
+    else
+        print_warning "kitty.conf file not found in GitHub repo"
+        print_warning "Skipping kitty configuration"
+    fi
+}
+
+# Step 7: Configure UTF-8 locale
 configure_locale() {
     print_status "Step 5: Configuring UTF-8 locale..."
     
@@ -327,13 +396,17 @@ main() {
     update_system
     install_yay
     install_essential_software
+    install_nerd_font
     replace_bashrc
     copy_kde_shortcuts
+    copy_kitty_config
     configure_locale
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
     print_status "KDE shortcuts will be available after logging into KDE."
+    print_status "Kitty configuration will be applied when you start kitty."
+    print_status "UbuntuMono Nerd Font has been installed."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
