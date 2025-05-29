@@ -196,7 +196,25 @@ replace_bashrc() {
     fi
 }
 
-# Step 5: Configure UTF-8 locale
+# Step 5: Copy KDE shortcuts configuration
+copy_kde_shortcuts() {
+    print_status "Step 5: Copying KDE shortcuts configuration..."
+    
+    # Create .config directory if it doesn't exist
+    mkdir -p "$HOME/.config"
+    
+    # Check if KDE shortcuts file exists in the repo
+    if [[ -f "/tmp/setup_runner/kglobalshortcutsrc" ]]; then
+        print_status "Copying KDE shortcuts configuration to .config folder..."
+        cp "/tmp/setup_runner/kglobalshortcutsrc" "$HOME/.config/kglobalshortcutsrc"
+        print_success "KDE shortcuts configuration copied successfully"
+    else
+        print_warning "kglobalshortcutsrc file not found in GitHub repo"
+        print_warning "Skipping KDE shortcuts configuration"
+    fi
+}
+
+# Step 6: Configure UTF-8 locale
 configure_locale() {
     print_status "Step 5: Configuring UTF-8 locale..."
     
@@ -303,10 +321,12 @@ main() {
     install_yay
     install_essential_software
     replace_bashrc
+    copy_kde_shortcuts
     configure_locale
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
+    print_status "KDE shortcuts will be available after logging into KDE."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
