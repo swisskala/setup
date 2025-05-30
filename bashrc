@@ -69,7 +69,6 @@ commandman() {
    echo -e "  \e[1;34mtar -czf backup.tar.gz dir/\e[0m# Create .tar.gz archive"
    echo -e "  \e[1;34mtar -tf archive.tar\e[0m     # List contents without extracting"
    echo ""
-   echo -e "\e[1;37mType 'man <command>' or 'tldr <command>' for documentation.\e[0m"
 }
 
 # Colorful bash prompt - added by setup script
