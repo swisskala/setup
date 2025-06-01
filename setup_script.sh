@@ -362,8 +362,8 @@ copy_i3_config() {
     # Create .config/i3 directory if it doesn't exist
     mkdir -p "$HOME/.config/i3"
     
-    # Check if i3 config file exists in the repo
-    if [[ -f "/tmp/setup_runner/config" ]]; then
+    # Check if i3 config file exists in the repo (in i3 folder)
+    if [[ -f "/tmp/setup_runner/i3/config" ]]; then
         # Create backup if file exists
         if [[ -f "$HOME/.config/i3/config" ]]; then
             local backup_file="$HOME/.config/i3/config.backup.$(date +%Y%m%d_%H%M%S)"
@@ -372,10 +372,10 @@ copy_i3_config() {
         fi
         
         print_status "Copying i3 configuration to .config/i3 folder..."
-        cp "/tmp/setup_runner/config" "$HOME/.config/i3/config"
+        cp "/tmp/setup_runner/i3/config" "$HOME/.config/i3/config"
         print_success "i3 configuration copied successfully"
     else
-        print_warning "config file not found in GitHub repo at /tmp/setup_runner/config"
+        print_warning "config file not found in GitHub repo at /tmp/setup_runner/i3/config"
         print_warning "Skipping i3 configuration"
     fi
 }
