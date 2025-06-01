@@ -104,51 +104,7 @@ install_yay() {
     fi
 }
 
-# Step 4: Install UbuntuMono Nerd Font
-install_nerd_font() {
-    print_status "Step 4: Installing UbuntuMono Nerd Font..."
-    
-    # Create fonts directory if it doesn't exist
-    mkdir -p "$HOME/.local/share/fonts"
-    
-    # Check if font is already installed
-    if fc-list | grep -q "UbuntuMono Nerd Font"; then
-        print_warning "UbuntuMono Nerd Font already installed, skipping..."
-        return
-    fi
-    
-    if [[ "$SYSTEM" == "debian" ]]; then
-        print_status "Installing UbuntuMono Nerd Font via package manager..."
-        # Try to install via package first
-        if sudo apt install -y fonts-ubuntu-nerd 2>/dev/null; then
-            print_success "UbuntuMono Nerd Font installed via package manager"
-        else
-            print_status "Package not available, downloading font manually..."
-            install_nerd_font_manual
-        fi
-        
-    elif [[ "$SYSTEM" == "arch" ]]; then
-        print_status "Installing UbuntuMono Nerd Font via AUR..."
-        if command -v yay &> /dev/null; then
-            if yay -S --needed --noconfirm ttf-ubuntu-nerd 2>/dev/null; then
-                print_success "UbuntuMono Nerd Font installed via AUR"
-            else
-                print_status "AUR package failed, downloading font manually..."
-                install_nerd_font_manual
-            fi
-        else
-            print_status "yay not available, downloading font manually..."
-            install_nerd_font_manual
-        fi
-    fi
-    
-    # Refresh font cache
-    print_status "Refreshing font cache..."
-    fc-cache -fv
-    print_success "Font cache refreshed"
-}
-
-# Step 5: Install essential software
+# Step 3: Install essential software
 install_essential_software() {
     print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, mission-center)..."
     
@@ -213,6 +169,115 @@ install_essential_software() {
     else
         print_warning "tealdeer not found in PATH, skipping cache initialization"
     fi
+}
+
+# Helper function for Mission Center Flatpak installation on Arch
+install_mission_center_flatpak_arch() {
+    if ! command -v flatpak &> /dev/null; then
+        print_status "Installing Flatpak first..."
+        sudo pacman -S --needed --noconfirm flatpak
+    fi
+    
+    print_status "Adding Flathub repository..."
+    if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+        print_success "Flathub repository added successfully"
+        
+        print_status "Installing Mission Center from Flathub..."
+        if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+            print_success "Mission Center installed successfully via Flatpak"
+        else
+            print_warning "Failed to install Mission Center via Flatpak"
+            print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
+        fi
+    else
+        print_warning "Failed to add Flathub repository (network issue?)"
+        print_warning "Skipping Mission Center installation via Flatpak"
+        print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+    fi
+}
+
+# Helper function for manual Nerd Font installation
+install_nerd_font_manual() {
+    print_status "Downloading UbuntuMono Nerd Font manually..."
+    
+    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/UbuntuMono.zip"
+    local temp_dir="/tmp/nerd-font-install"
+    
+    # Create temporary directory
+    mkdir -p "$temp_dir"
+    cd "$temp_dir"
+    
+    # Download font
+    if command -v wget &> /dev/null; then
+        wget -q "$font_url" -O UbuntuMono.zip
+    elif command -v curl &> /dev/null; then
+        curl -sL "$font_url" -o UbuntuMono.zip
+    else
+        print_error "Neither wget nor curl available for downloading font"
+        return 1
+    fi
+    
+    # Extract and install
+    if [[ -f "UbuntuMono.zip" ]]; then
+        print_status "Extracting font files..."
+        unzip -q UbuntuMono.zip
+        
+        print_status "Installing font files..."
+        find . -name "*.ttf" -exec cp {} "$HOME/.local/share/fonts/" \;
+        
+        print_success "UbuntuMono Nerd Font installed manually"
+    else
+        print_error "Failed to download font file"
+        return 1
+    fi
+    
+    # Clean up
+    cd /
+    rm -rf "$temp_dir"
+}
+
+# Step 4: Install UbuntuMono Nerd Font
+install_nerd_font() {
+    print_status "Step 4: Installing UbuntuMono Nerd Font..."
+    
+    # Create fonts directory if it doesn't exist
+    mkdir -p "$HOME/.local/share/fonts"
+    
+    # Check if font is already installed
+    if fc-list | grep -q "UbuntuMono Nerd Font"; then
+        print_warning "UbuntuMono Nerd Font already installed, skipping..."
+        return
+    fi
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        print_status "Installing UbuntuMono Nerd Font via package manager..."
+        # Try to install via package first
+        if sudo apt install -y fonts-ubuntu-nerd 2>/dev/null; then
+            print_success "UbuntuMono Nerd Font installed via package manager"
+        else
+            print_status "Package not available, downloading font manually..."
+            install_nerd_font_manual
+        fi
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Installing UbuntuMono Nerd Font via AUR..."
+        if command -v yay &> /dev/null; then
+            if yay -S --needed --noconfirm ttf-ubuntu-nerd 2>/dev/null; then
+                print_success "UbuntuMono Nerd Font installed via AUR"
+            else
+                print_status "AUR package failed, downloading font manually..."
+                install_nerd_font_manual
+            fi
+        else
+            print_status "yay not available, downloading font manually..."
+            install_nerd_font_manual
+        fi
+    fi
+    
+    # Refresh font cache
+    print_status "Refreshing font cache..."
+    fc-cache -fv
+    print_success "Font cache refreshed"
 }
 
 # Step 6: Replace .bashrc with version from GitHub repo
@@ -290,9 +355,34 @@ copy_kitty_config() {
     fi
 }
 
-# Step 7: Configure UTF-8 locale
+# Step 9: Copy i3 configuration
+copy_i3_config() {
+    print_status "Step 9: Copying i3 configuration..."
+    
+    # Create .config/i3 directory if it doesn't exist
+    mkdir -p "$HOME/.config/i3"
+    
+    # Check if i3 config file exists in the repo
+    if [[ -f "/tmp/setup_runner/config" ]]; then
+        # Create backup if file exists
+        if [[ -f "$HOME/.config/i3/config" ]]; then
+            local backup_file="$HOME/.config/i3/config.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/i3/config" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying i3 configuration to .config/i3 folder..."
+        cp "/tmp/setup_runner/config" "$HOME/.config/i3/config"
+        print_success "i3 configuration copied successfully"
+    else
+        print_warning "config file not found in GitHub repo at /tmp/setup_runner/config"
+        print_warning "Skipping i3 configuration"
+    fi
+}
+
+# Step 10: Configure UTF-8 locale
 configure_locale() {
-    print_status "Step 5: Configuring UTF-8 locale..."
+    print_status "Step 10: Configuring UTF-8 locale..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Configuring locale for Debian-based system..."
@@ -391,7 +481,6 @@ main() {
     echo "    System Setup Script Starting"
     echo "========================================="
     
-
     detect_system
     update_system
     install_yay
@@ -400,40 +489,17 @@ main() {
     replace_bashrc
     copy_kde_shortcuts
     copy_kitty_config
+    copy_i3_config
     configure_locale
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
     print_status "KDE shortcuts will be available after logging into KDE."
     print_status "Kitty configuration will be applied when you start kitty."
+    print_status "i3 configuration will be applied when you start i3."
     print_status "UbuntuMono Nerd Font has been installed."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
 # Run the main function
 main "$@"
-
-# Helper function for Mission Center Flatpak installation on Arch
-install_mission_center_flatpak_arch() {
-    if ! command -v flatpak &> /dev/null; then
-        print_status "Installing Flatpak first..."
-        sudo pacman -S --needed --noconfirm flatpak
-    fi
-    
-    print_status "Adding Flathub repository..."
-    if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-        print_success "Flathub repository added successfully"
-        
-        print_status "Installing Mission Center from Flathub..."
-        if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-            print_success "Mission Center installed successfully via Flatpak"
-        else
-            print_warning "Failed to install Mission Center via Flatpak"
-            print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
-        fi
-    else
-        print_warning "Failed to add Flathub repository (network issue?)"
-        print_warning "Skipping Mission Center installation via Flatpak"
-        print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-    fi
-}
