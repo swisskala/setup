@@ -348,12 +348,48 @@ copy_kitty_config() {
         
         print_status "Copying kitty configuration to .config/kitty folder..."
         cp "/tmp/setup_runner/kitty.conf" "$HOME/.config/kitty/kitty.conf"
-        print_success "Kitty configuration copied successfully"
+        
+        # Get hostname and set font size accordingly
+        local hostname=$(hostname)
+        local font_size=14  # default font size
+        
+        case "$hostname" in
+            "surfarch")
+                font_size=22
+                print_status "Detected surfarch hostname, setting font size to 22"
+                ;;
+            "thinkarch")
+                font_size=16
+                print_status "Detected thinkarch hostname, setting font size to 16"
+                ;;
+            *)
+                print_status "Unknown hostname '$hostname', using default font size of 14"
+                ;;
+        esac
+        
+        # Update font size in kitty.conf
+        # This handles various font size configuration formats
+        if grep -q "^font_size" "$HOME/.config/kitty/kitty.conf"; then
+            # Replace existing font_size line
+            sed -i "s/^font_size.*/font_size $font_size/" "$HOME/.config/kitty/kitty.conf"
+            print_status "Updated existing font_size setting to $font_size"
+        elif grep -q "^#.*font_size" "$HOME/.config/kitty/kitty.conf"; then
+            # Uncomment and set font_size if it's commented
+            sed -i "s/^#.*font_size.*/font_size $font_size/" "$HOME/.config/kitty/kitty.conf"
+            print_status "Uncommented and set font_size to $font_size"
+        else
+            # Add font_size line if it doesn't exist
+            echo "font_size $font_size" >> "$HOME/.config/kitty/kitty.conf"
+            print_status "Added new font_size setting: $font_size"
+        fi
+        
+        print_success "Kitty configuration copied and font size set to $font_size for hostname '$hostname'"
     else
         print_warning "kitty.conf file not found in GitHub repo"
         print_warning "Skipping kitty configuration"
     fi
 }
+
 
 # Step 9: Copy i3 configuration
 copy_i3_config() {
