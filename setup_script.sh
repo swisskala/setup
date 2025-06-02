@@ -551,6 +551,57 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
+# Step 11: Create .profile with QT style override
+create_profile() {
+    print_status "Step X: Creating .profile with QT style override..."
+    
+    local profile_path="$HOME/.profile"
+    local qt_export="export QT_STYLE_OVERRIDE=breeze"
+    
+    # Create backup if .profile exists
+    if [[ -f "$profile_path" ]]; then
+        local backup_file="$HOME/.profile.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$profile_path" "$backup_file"
+        print_status "Backup created: $backup_file"
+        
+        # Check if QT_STYLE_OVERRIDE already exists in the file
+        if grep -q "QT_STYLE_OVERRIDE" "$profile_path"; then
+            print_warning "QT_STYLE_OVERRIDE already exists in .profile"
+            
+            # Update existing line
+            sed -i 's/^.*QT_STYLE_OVERRIDE.*/export QT_STYLE_OVERRIDE=breeze/' "$profile_path"
+            print_status "Updated existing QT_STYLE_OVERRIDE in .profile"
+        else
+            # Add the export line
+            echo "" >> "$profile_path"
+            echo "# QT Style Override" >> "$profile_path"
+            echo "$qt_export" >> "$profile_path"
+            print_status "Added QT_STYLE_OVERRIDE to existing .profile"
+        fi
+    else
+        # Create new .profile file
+        print_status "Creating new .profile file..."
+        cat > "$profile_path" << 'EOF'
+# ~/.profile: executed by the command interpreter for login shells.
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
+# exists.
+
+# QT Style Override
+export QT_STYLE_OVERRIDE=breeze
+EOF
+        print_status "Created new .profile with QT_STYLE_OVERRIDE"
+    fi
+    
+    # Make sure the file has proper permissions
+    chmod 644 "$profile_path"
+    
+    # Export for current session
+    export QT_STYLE_OVERRIDE=breeze
+    
+    print_success ".profile created/updated with QT_STYLE_OVERRIDE=breeze"
+    print_status "QT style override will take effect after next login or reboot"
+}
+
 # Main execution
 main() {
     echo "========================================="
@@ -567,6 +618,7 @@ main() {
     copy_kitty_config
     copy_i3_config
     configure_locale
+    create_profile
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
