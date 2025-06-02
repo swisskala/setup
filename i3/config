@@ -37,10 +37,13 @@ floating_modifier $mod
 # or left-clicking anywhere into the window while holding the floating modifier.
 tiling_drag modifier titlebar
 
-# start a terminal
+# start an application
 bindsym $mod+Return exec kitty
 
 bindsym $mod+w exec thorium-browser
+
+bindsym $mod+e exec dolphin
+
 
 # kill focused window
 bindsym $mod+q kill
