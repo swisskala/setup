@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# System Setup Script for Debian-based and Arch systems
-# Author: User
-# Description: Automated setup script for new computer installations
-
 set -e  # Exit on any error
 
 # Colors for output
