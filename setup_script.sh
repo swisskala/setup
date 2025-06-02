@@ -102,11 +102,11 @@ install_yay() {
 
 # Step 3: Install essential software
 install_essential_software() {
-    print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, mission-center)..."
+    print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, i3, picom, mission-center)..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Installing software via apt..."
-        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano
+        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom
         
         # Install Mission Center via Flatpak for Debian systems
         print_status "Installing Mission Center via Flatpak..."
@@ -139,7 +139,7 @@ install_essential_software() {
         
     elif [[ "$SYSTEM" == "arch" ]]; then
         print_status "Installing software via pacman..."
-        sudo pacman -S --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano
+        sudo pacman -S --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano i3-wm picom
         
         # Install Mission Center via AUR
         print_status "Installing Mission Center via AUR..."
@@ -456,9 +456,60 @@ copy_i3_config() {
     fi
 }
 
-# Step 10: Configure UTF-8 locale
+# Step 10: Copy .xinitrc configuration
+copy_xinitrc() {
+    print_status "Step 10: Copying .xinitrc configuration..."
+    
+    # Check if xinitrc file exists in the repo (without dot)
+    if [[ -f "/tmp/setup_runner/xinitrc" ]]; then
+        # Create backup if file exists
+        if [[ -f "$HOME/.xinitrc" ]]; then
+            local backup_file="$HOME/.xinitrc.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.xinitrc" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying xinitrc from GitHub repo to .xinitrc in home directory..."
+        cp "/tmp/setup_runner/xinitrc" "$HOME/.xinitrc"
+        
+        # Make sure the file has proper permissions
+        chmod 644 "$HOME/.xinitrc"
+        
+        print_success ".xinitrc configuration copied successfully"
+    else
+        print_warning "xinitrc file not found in GitHub repo"
+        print_warning "Skipping .xinitrc configuration"
+    fi
+}
+
+# Step 11: Copy picom configuration
+copy_picom_config() {
+    print_status "Step 10: Copying picom configuration..."
+    
+    # Create .config directory if it doesn't exist
+    mkdir -p "$HOME/.config"
+    
+    # Check if picom config file exists in the repo
+    if [[ -f "/tmp/setup_runner/picom.conf" ]]; then
+        # Create backup if file exists
+        if [[ -f "$HOME/.config/picom.conf" ]]; then
+            local backup_file="$HOME/.config/picom.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/picom.conf" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying picom configuration to .config folder..."
+        cp "/tmp/setup_runner/picom.conf" "$HOME/.config/picom.conf"
+        print_success "Picom configuration copied successfully"
+    else
+        print_warning "picom.conf file not found in GitHub repo"
+        print_warning "Skipping picom configuration"
+    fi
+}
+
+# Step 12: Configure UTF-8 locale
 configure_locale() {
-    print_status "Step 10: Configuring UTF-8 locale..."
+    print_status "Step 12: Configuring UTF-8 locale..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Configuring locale for Debian-based system..."
@@ -551,9 +602,9 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
-# Step 11: Create .profile with QT style override
+# Step 13: Create .profile with QT style override
 create_profile() {
-    print_status "Step X: Creating .profile with QT style override..."
+    print_status "Step 13: Creating .profile with QT style override..."
     
     local profile_path="$HOME/.profile"
     local qt_export="export QT_STYLE_OVERRIDE=breeze"
@@ -617,6 +668,8 @@ main() {
     copy_kde_shortcuts
     copy_kitty_config
     copy_i3_config
+    copy_xinitrc
+    copy_picom_config
     configure_locale
     create_profile
 
@@ -625,7 +678,10 @@ main() {
     print_status "KDE shortcuts will be available after logging into KDE."
     print_status "Kitty configuration will be applied when you start kitty."
     print_status "i3 configuration will be applied when you start i3."
+    print_status "Picom configuration will be applied when you start picom."
     print_status "UbuntuMono Nerd Font has been installed."
+    print_status ".xinitrc configuration will be used when starting X session with startx."
+    print_status "QT style override will take effect after next login or reboot."
     print_status "Consider rebooting to ensure all locale changes take effect."
 }
 
