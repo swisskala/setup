@@ -602,55 +602,42 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
-# Step 12: Create .profile with QT style override
+# Step 12: Replace .profile with version from GitHub repo
 create_profile() {
-    print_status "Step 13: Creating .profile with QT style override..."
-    
-    local profile_path="$HOME/.profile"
-    local qt_export="export QT_STYLE_OVERRIDE=breeze"
+    print_status "Step 13: Replacing .profile with version from GitHub repo..."
     
     # Create backup if .profile exists
-    if [[ -f "$profile_path" ]]; then
+    if [[ -f "$HOME/.profile" ]]; then
         local backup_file="$HOME/.profile.backup.$(date +%Y%m%d_%H%M%S)"
-        cp "$profile_path" "$backup_file"
+        cp "$HOME/.profile" "$backup_file"
         print_status "Backup created: $backup_file"
-        
-        # Check if QT_STYLE_OVERRIDE already exists in the file
-        if grep -q "QT_STYLE_OVERRIDE" "$profile_path"; then
-            print_warning "QT_STYLE_OVERRIDE already exists in .profile"
-            
-            # Update existing line
-            sed -i 's/^.*QT_STYLE_OVERRIDE.*/export QT_STYLE_OVERRIDE=breeze/' "$profile_path"
-            print_status "Updated existing QT_STYLE_OVERRIDE in .profile"
-        else
-            # Add the export line
-            echo "" >> "$profile_path"
-            echo "# QT Style Override" >> "$profile_path"
-            echo "$qt_export" >> "$profile_path"
-            print_status "Added QT_STYLE_OVERRIDE to existing .profile"
-        fi
-    else
-        # Create new .profile file
-        print_status "Creating new .profile file..."
-        cat > "$profile_path" << 'EOF'
-# ~/.profile: executed by the command interpreter for login shells.
-# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
-# exists.
-
-# QT Style Override
-export QT_STYLE_OVERRIDE=breeze
-EOF
-        print_status "Created new .profile with QT_STYLE_OVERRIDE"
     fi
     
-    # Make sure the file has proper permissions
-    chmod 644 "$profile_path"
+    # Force delete the old .profile
+    rm -f "$HOME/.profile"
     
-    # Export for current session
-    export QT_STYLE_OVERRIDE=breeze
+    # Check if profile exists in the hardcoded path
+    if [[ -f "/tmp/setup_runner/profile" ]]; then
+        print_status "Copying profile from GitHub repo to .profile in home directory..."
+        cp "/tmp/setup_runner/profile" "$HOME/.profile"
+        
+        # Make sure the file has proper permissions
+        chmod 644 "$HOME/.profile"
+        
+        print_success ".profile replaced with GitHub version"
+        
+        # Source the profile to apply QT_STYLE_OVERRIDE for current session
+        if grep -q "QT_STYLE_OVERRIDE" "$HOME/.profile"; then
+            source "$HOME/.profile"
+            print_status "Sourced .profile for current session"
+        fi
+    else
+        print_error "profile file not found at /tmp/setup_runner/profile"
+        return 1
+    fi
     
-    print_success ".profile created/updated with QT_STYLE_OVERRIDE=breeze"
-    print_status "QT style override will take effect after next login or reboot"
+    print_success ".profile configuration applied successfully"
+    print_status "Profile settings will take effect after next login or reboot"
 }
 
 # Main execution
