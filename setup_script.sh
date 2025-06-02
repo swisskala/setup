@@ -602,11 +602,11 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
-# Step 12: Replace .profile with version from GitHub repo
+# Step 12: Replace .profile and .bash_profile with versions from GitHub repo
 create_profile() {
-    print_status "Step 13: Replacing .profile with version from GitHub repo..."
+    print_status "Step 13: Replacing .profile and .bash_profile with versions from GitHub repo..."
     
-    # Create backup if .profile exists
+    # Handle .profile
     if [[ -f "$HOME/.profile" ]]; then
         local backup_file="$HOME/.profile.backup.$(date +%Y%m%d_%H%M%S)"
         cp "$HOME/.profile" "$backup_file"
@@ -626,7 +626,7 @@ create_profile() {
         
         print_success ".profile replaced with GitHub version"
         
-        # Source the profile to apply QT_STYLE_OVERRIDE for current session
+        # Source the profile to apply settings for current session
         if grep -q "QT_STYLE_OVERRIDE" "$HOME/.profile"; then
             source "$HOME/.profile"
             print_status "Sourced .profile for current session"
@@ -636,7 +636,31 @@ create_profile() {
         return 1
     fi
     
-    print_success ".profile configuration applied successfully"
+    # Handle .bash_profile
+    if [[ -f "$HOME/.bash_profile" ]]; then
+        local backup_file="$HOME/.bash_profile.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$HOME/.bash_profile" "$backup_file"
+        print_status "Backup created: $backup_file"
+    fi
+    
+    # Force delete the old .bash_profile
+    rm -f "$HOME/.bash_profile"
+    
+    # Check if bash_profile exists in the hardcoded path
+    if [[ -f "/tmp/setup_runner/bash_profile" ]]; then
+        print_status "Copying bash_profile from GitHub repo to .bash_profile in home directory..."
+        cp "/tmp/setup_runner/bash_profile" "$HOME/.bash_profile"
+        
+        # Make sure the file has proper permissions
+        chmod 644 "$HOME/.bash_profile"
+        
+        print_success ".bash_profile replaced with GitHub version"
+    else
+        print_warning "bash_profile file not found at /tmp/setup_runner/bash_profile"
+        print_warning "Skipping .bash_profile configuration"
+    fi
+    
+    print_success "Profile configuration applied successfully"
     print_status "Profile settings will take effect after next login or reboot"
 }
 
