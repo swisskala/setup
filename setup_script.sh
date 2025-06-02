@@ -276,7 +276,7 @@ install_nerd_font() {
     print_success "Font cache refreshed"
 }
 
-# Step 6: Replace .bashrc with version from GitHub repo
+# Step 5: Replace .bashrc with version from GitHub repo
 replace_bashrc() {
     print_status "Step 6: Replacing .bashrc with version from GitHub repo..."
     
@@ -301,7 +301,7 @@ replace_bashrc() {
     fi
 }
 
-# Step 7: Copy KDE shortcuts configuration
+# Step 6: Copy KDE shortcuts configuration
 copy_kde_shortcuts() {
     print_status "Step 7: Copying KDE shortcuts configuration..."
     
@@ -326,7 +326,7 @@ copy_kde_shortcuts() {
     fi
 }
 
-# Step 8: Copy kitty configuration
+# Step 7: Copy kitty configuration
 copy_kitty_config() {
     print_status "Step 8: Copying kitty configuration..."
     
@@ -397,7 +397,7 @@ copy_kitty_config() {
     fi
 }
 
-# Step 9: Copy i3 configuration
+# Step 8: Copy i3 configuration
 copy_i3_config() {
     print_status "Step 9: Copying i3 configuration..."
     
@@ -456,7 +456,7 @@ copy_i3_config() {
     fi
 }
 
-# Step 10: Copy .xinitrc configuration
+# Step 9: Copy .xinitrc configuration
 copy_xinitrc() {
     print_status "Step 10: Copying .xinitrc configuration..."
     
@@ -482,7 +482,7 @@ copy_xinitrc() {
     fi
 }
 
-# Step 11: Copy picom configuration
+# Step 10: Copy picom configuration
 copy_picom_config() {
     print_status "Step 10: Copying picom configuration..."
     
@@ -507,7 +507,7 @@ copy_picom_config() {
     fi
 }
 
-# Step 12: Configure UTF-8 locale
+# Step 11: Configure UTF-8 locale
 configure_locale() {
     print_status "Step 12: Configuring UTF-8 locale..."
     
@@ -602,7 +602,7 @@ configure_locale() {
     print_status "Note: You may need to reboot for locale changes to take full effect"
 }
 
-# Step 13: Create .profile with QT style override
+# Step 12: Create .profile with QT style override
 create_profile() {
     print_status "Step 13: Creating .profile with QT style override..."
     
