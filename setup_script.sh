@@ -397,7 +397,6 @@ copy_kitty_config() {
     fi
 }
 
-
 # Step 9: Copy i3 configuration
 copy_i3_config() {
     print_status "Step 9: Copying i3 configuration..."
@@ -420,6 +419,40 @@ copy_i3_config() {
     else
         print_warning "config file not found in GitHub repo at /tmp/setup_runner/i3/config"
         print_warning "Skipping i3 configuration"
+    fi
+    
+    # Copy i3blocks.conf to /etc/
+    if [[ -f "/tmp/setup_runner/etc/i3blocks.conf" ]]; then
+        # Create backup if file exists
+        if [[ -f "/etc/i3blocks.conf" ]]; then
+            local backup_file="/etc/i3blocks.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            sudo cp "/etc/i3blocks.conf" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying i3blocks.conf to /etc/ folder..."
+        sudo cp "/tmp/setup_runner/etc/i3blocks.conf" "/etc/i3blocks.conf"
+        print_success "i3blocks configuration copied successfully"
+    else
+        print_warning "i3blocks.conf file not found in GitHub repo at /tmp/setup_runner/etc/i3blocks.conf"
+        print_warning "Skipping i3blocks configuration"
+    fi
+    
+    # Copy i3status.conf to /etc/
+    if [[ -f "/tmp/setup_runner/etc/i3status.conf" ]]; then
+        # Create backup if file exists
+        if [[ -f "/etc/i3status.conf" ]]; then
+            local backup_file="/etc/i3status.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            sudo cp "/etc/i3status.conf" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying i3status.conf to /etc/ folder..."
+        sudo cp "/tmp/setup_runner/etc/i3status.conf" "/etc/i3status.conf"
+        print_success "i3status configuration copied successfully"
+    else
+        print_warning "i3status.conf file not found in GitHub repo at /tmp/setup_runner/etc/i3status.conf"
+        print_warning "Skipping i3status configuration"
     fi
 }
 
