@@ -350,7 +350,18 @@ copy_kitty_config() {
         cp "/tmp/setup_runner/kitty.conf" "$HOME/.config/kitty/kitty.conf"
         
         # Get hostname and set font size accordingly
-        local hostname=$(hostname)
+        # Try multiple methods to get hostname
+        local hostname=""
+        if command -v hostname &> /dev/null; then
+            hostname=$(hostname)
+        elif [[ -f /etc/hostname ]]; then
+            hostname=$(cat /etc/hostname | tr -d '\n')
+        elif [[ -n "$HOSTNAME" ]]; then
+            hostname="$HOSTNAME"
+        else
+            hostname=$(uname -n)
+        fi
+        
         local font_size=14  # default font size
         
         case "$hostname" in
