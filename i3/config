@@ -4,7 +4,7 @@ for_window [class="kitty"] border pixel 0
 
 workspace_layout tabbed
 
-bindsym $mod+Shift+s exec spectacle --region --copy-to-clipboard
+bindsym $mod+Shift+s exec spectacle --region
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
