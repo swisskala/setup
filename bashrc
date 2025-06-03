@@ -11,6 +11,7 @@ alias lsd='lsd -lh'
 alias lsda='lsd -alh'
 alias startw='startplasma-wayland'
 alias stopx='i3-msg exit'
+alias ask='llm-remote -m claude-4-sonnet'
 
 # Enhanced cd function - auto-list directory contents with lsd
 cd() {
