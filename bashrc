@@ -1,7 +1,4 @@
 
-export QT_STYLE_OVERRIDE=breeze
-export QT_QPA_PLATFORMTHEME=kde
-
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 alias la='ls -ahl --color=auto'
