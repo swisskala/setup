@@ -5,4 +5,4 @@
 # QT Style Override
 export QT_STYLE_OVERRIDE=breeze
 
-export FILEMANAGER=dolphin
+
