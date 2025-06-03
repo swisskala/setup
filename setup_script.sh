@@ -710,7 +710,7 @@ main() {
     copy_picom_config
     configure_locale
     create_profile
-    copy_llm_remote()
+    copy_llm_remote
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
