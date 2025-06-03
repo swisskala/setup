@@ -6,7 +6,6 @@ SSH_OPTIONS="-o ConnectTimeout=10 -o BatchMode=yes -t -q -o LogLevel=QUIET"
 
 if [ $# -eq 0 ]; then
     echo "Usage: llm-remote [llm arguments]"
-    echo "Example: llm-remote -m claude-4-sonnet 'what is the command to update an arch system'"
     exit 1
 fi
 
