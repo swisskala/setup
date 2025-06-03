@@ -664,6 +664,33 @@ create_profile() {
     print_status "Profile settings will take effect after next login or reboot"
 }
 
+# Step 13: Copy llm-remote script to /usr/local/bin
+copy_llm_remote() {
+    print_status "Step X: Copying llm-remote script to /usr/local/bin..."
+    
+    # Check if llm-remote script exists in the repo
+    if [[ -f "/tmp/setup_runner/llm-remote" ]]; then
+        # Create backup if file exists
+        if [[ -f "/usr/local/bin/llm-remote" ]]; then
+            local backup_file="/usr/local/bin/llm-remote.backup.$(date +%Y%m%d_%H%M%S)"
+            sudo cp "/usr/local/bin/llm-remote" "$backup_file"
+            print_status "Backup created: $backup_file"
+        fi
+        
+        print_status "Copying llm-remote script to /usr/local/bin..."
+        sudo cp "/tmp/setup_runner/llm-remote" "/usr/local/bin/llm-remote"
+        
+        # Make the script executable
+        sudo chmod +x "/usr/local/bin/llm-remote"
+        
+        print_success "llm-remote script copied and made executable in /usr/local/bin"
+    else
+        print_warning "llm-remote script not found in GitHub repo"
+        print_warning "Skipping llm-remote script installation"
+    fi
+}
+
+
 # Main execution
 main() {
     echo "========================================="
@@ -683,6 +710,7 @@ main() {
     copy_picom_config
     configure_locale
     create_profile
+    copy_llm_remote()
 
     print_success "Setup script completed successfully!"
     print_status "Remember to run 'source ~/.bashrc' to apply the new configuration!"
