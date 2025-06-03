@@ -10,3 +10,4 @@ if [[ $(tty) == /dev/tty* ]]; then
 fi
 
 export FILEMANAGER=dolphin
+export GTK_THEME=Adwaita:dark dmenu_run
