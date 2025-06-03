@@ -1,5 +1,7 @@
 set $mod Mod4
 
+for_window [class="kitty"] border pixel 0
+
 workspace_layout tabbed
 
 # Font for window titles. Will also be used by the bar unless a different font
