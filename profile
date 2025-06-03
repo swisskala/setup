@@ -4,5 +4,7 @@
 
 # QT Style Override
 export QT_STYLE_OVERRIDE=breeze
+export GTK_THEME=Adwaita:dark
+
 
 
