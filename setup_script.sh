@@ -17,39 +17,19 @@ source "$SCRIPT_DIR/steps/install_fonts.sh"
 source "$SCRIPT_DIR/steps/configure_dotfiles.sh"
 source "$SCRIPT_DIR/steps/configure_locale.sh"
 
-# Configuration paths (updated for new folder structure)
-export REPO_PATH="$SCRIPT_DIR"
+# Configuration paths (hardcoded to /tmp/setup_runner)
+export REPO_PATH="/tmp/setup_runner"
 export CONFIG_PATH="$REPO_PATH/config"
 
-# Cleanup function
+# Cleanup function - force deletion without asking
 cleanup_temp_files() {
-    # Check if we're running from a temporary location
-    if [[ "$SCRIPT_DIR" == /tmp/* ]]; then
-        print_status "Script is running from temporary location: $SCRIPT_DIR"
-        
-        # Ask user if they want to clean up
-        echo -n "Do you want to remove the temporary setup files? [y/N]: "
-        read -r response
-        
-        case "$response" in
-            [yY]|[yY][eE][sS])
-                print_status "Cleaning up temporary files..."
-                cd /
-                if rm -rf "$SCRIPT_DIR" 2>/dev/null; then
-                    print_success "Temporary setup files removed: $SCRIPT_DIR"
-                else
-                    print_warning "Failed to remove temporary files: $SCRIPT_DIR"
-                    print_warning "You may need to remove them manually with: sudo rm -rf $SCRIPT_DIR"
-                fi
-                ;;
-            *)
-                print_status "Keeping temporary files at: $SCRIPT_DIR"
-                print_status "You can remove them manually later with: rm -rf $SCRIPT_DIR"
-                ;;
-        esac
+    print_status "Cleaning up temporary files..."
+    cd /
+    if rm -rf "$REPO_PATH" 2>/dev/null; then
+        print_success "Temporary setup files removed: $REPO_PATH"
     else
-        print_status "Script running from permanent location: $SCRIPT_DIR"
-        print_status "No cleanup needed."
+        print_warning "Failed to remove temporary files: $REPO_PATH"
+        print_warning "You may need to remove them manually with: sudo rm -rf $REPO_PATH"
     fi
 }
 
