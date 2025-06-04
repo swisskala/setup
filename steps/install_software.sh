@@ -1,8 +1,23 @@
-# ============================================================================
-# FILE: install_software.sh
-# ============================================================================
-
 #!/bin/bash
+
+# Color output functions
+print_status() { echo -e "\e[34m[INFO]\e[0m $1"; }
+print_success() { echo -e "\e[32m[SUCCESS]\e[0m $1"; }
+print_warning() { echo -e "\e[33m[WARNING]\e[0m $1"; }
+print_error() { echo -e "\e[31m[ERROR]\e[0m $1"; }
+
+# Detect system
+print_status "Detecting system type..."
+if command -v apt >/dev/null 2>&1; then
+    SYSTEM="debian"
+    print_success "Detected Debian/Ubuntu system"
+elif command -v pacman >/dev/null 2>&1; then
+    SYSTEM="arch"
+    print_success "Detected Arch Linux system"
+else
+    print_error "Unsupported system - only Debian/Ubuntu and Arch Linux are supported"
+    exit 1
+fi
 
 # Helper function for Mission Center Flatpak installation on Arch
 install_mission_center_flatpak_arch() {
@@ -29,12 +44,13 @@ install_mission_center_flatpak_arch() {
     fi
 }
 
-# Step 3: Install essential software
+# Main installation function
 install_essential_software() {
-   print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, i3, picom, polkit, xfce-polkit, maim, xclip, mission-center, unbuffer, rich-cli)..."
+   print_status "Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, i3, picom, polkit, xfce-polkit, maim, xclip, mission-center, unbuffer, rich-cli)..."
    
    if [[ "$SYSTEM" == "debian" ]]; then
        print_status "Installing software via apt..."
+       sudo apt update
        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential
        
        # Install rich-cli from source
@@ -78,6 +94,7 @@ install_essential_software() {
        # Fallback: try pipx if source build failed
        if ! command -v rich >/dev/null 2>&1; then
            print_status "Source build failed, trying pipx as fallback..."
+           sudo apt install -y pipx
            if pipx install rich-cli 2>/dev/null; then
                print_success "rich-cli installed successfully via pipx (fallback)"
                pipx ensurepath 2>/dev/null || true
@@ -186,7 +203,7 @@ install_essential_software() {
        
    elif [[ "$SYSTEM" == "arch" ]]; then
        print_status "Installing software via pacman..."
-       sudo pacman -S --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano i3-wm picom polkit maim xclip expect python-pip
+       sudo pacman -Sy --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano i3-wm picom polkit maim xclip expect python-pip
        
        # Install rich-cli via AUR
        print_status "Installing rich-cli via AUR..."
@@ -249,22 +266,18 @@ install_essential_software() {
        print_warning "tealdeer not found in PATH, skipping cache initialization"
    fi
    
-   # No need to add PATH modifications since rich is installed to /usr/bin
    print_success "Installation complete - rich command should be available system-wide"
 }
 
-# ============================================================================
-# FILE: llm-remote
-# ============================================================================
-
-#!/bin/bash
-
-SSH_HOST="claude@llm.lan"
-SSH_OPTIONS="-o ConnectTimeout=10 -o BatchMode=yes -t -q -o LogLevel=QUIET"
-
-if [ $# -eq 0 ]; then
-    echo "Usage: llm-remote [llm arguments]"
-    exit 1
+# Check if running as root (optional warning)
+if [[ $EUID -eq 0 ]]; then
+    print_warning "Running as root - some installations may behave differently"
 fi
 
-unbuffer ssh $SSH_OPTIONS $SSH_HOST "llm $(printf '%q ' "$@")" 2>&1 | rich --markdown -
+# Run the installation
+print_status "Starting essential software installation..."
+install_essential_software
+
+print_success "Installation script completed!"
+print_status "You can now test the rich command with: rich --help"
+print_status "Don't forget to create your llm-remote script separately!"
