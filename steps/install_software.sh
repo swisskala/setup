@@ -53,57 +53,22 @@ install_essential_software() {
        sudo apt update
        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential pipx
        
-       # Install rich-cli from source
-       print_status "Installing rich-cli from source..."
-       RICH_BUILD_DIR="/tmp/rich-cli-build"
-       RICH_SOURCE_SUCCESS=false
-       
-       if rm -rf "$RICH_BUILD_DIR" 2>/dev/null && \
-          git clone https://github.com/Textualize/rich-cli.git "$RICH_BUILD_DIR" 2>/dev/null && \
-          cd "$RICH_BUILD_DIR"; then
+       # Install rich-cli via pipx (simpler and more reliable)
+       print_status "Installing rich-cli via pipx..."
+       if pipx install rich-cli 2>/dev/null; then
+           print_success "rich-cli installed successfully via pipx"
+           pipx ensurepath 2>/dev/null || true
            
-           print_status "Building rich-cli..."
-           if python3 -m venv venv 2>/dev/null && \
-              source venv/bin/activate && \
-              pip install --upgrade pip setuptools wheel 2>/dev/null && \
-              pip install . 2>/dev/null; then
-               
-               print_status "Installing rich-cli to /usr/bin..."
-               if sudo cp venv/bin/rich /usr/bin/rich 2>/dev/null && \
-                  sudo chmod +x /usr/bin/rich; then
-                   print_success "rich-cli installed successfully from source to /usr/bin"
-                   # Test installation with the actual binary path
-                   if /usr/bin/rich --version >/dev/null 2>&1; then
-                       print_success "rich command is working correctly"
-                       RICH_SOURCE_SUCCESS=true
-                   else
-                       print_warning "rich installed but may have dependency issues"
-                   fi
-               else
-                   print_warning "Failed to copy rich to /usr/bin"
-               fi
+           # Test installation
+           if command -v rich >/dev/null 2>&1 && rich --version >/dev/null 2>&1; then
+               print_success "rich command is working correctly"
            else
-               print_warning "Failed to build rich-cli from source"
+               print_warning "rich installed but may not be in PATH yet"
+               print_warning "You may need to restart your shell or run: source ~/.bashrc"
            fi
-           
-           # Cleanup
-           cd - >/dev/null 2>&1
-           rm -rf "$RICH_BUILD_DIR" 2>/dev/null
        else
-           print_warning "Failed to clone rich-cli repository"
-           print_warning "This might be due to network issues or missing git"
-       fi
-       
-       # Fallback: try pipx only if source build actually failed
-       if [[ "$RICH_SOURCE_SUCCESS" == false ]]; then
-           print_status "Source build failed, trying pipx as fallback..."
-           if pipx install rich-cli 2>/dev/null; then
-               print_success "rich-cli installed successfully via pipx (fallback)"
-               pipx ensurepath 2>/dev/null || true
-           else
-               print_warning "Both source build and pipx installation failed"
-               print_warning "You can install it manually later with: pipx install rich-cli"
-           fi
+           print_warning "Failed to install rich-cli via pipx"
+           print_warning "You can install it manually later with: pipx install rich-cli"
        fi
        
        # Install Mission Center via Flatpak for Debian systems
