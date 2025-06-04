@@ -290,8 +290,22 @@ create_profile() {
 copy_llm_remote() {
     print_status "Step 12: Copying llm-remote script to /usr/local/bin..."
     
-    # Check if llm-remote script exists in the config folder
-    if [[ -f "$CONFIG_PATH/llm-remote" ]]; then
+    # Detect system type
+    local system_type=""
+    if command -v apt >/dev/null 2>&1; then
+        system_type="debian"
+    elif command -v pacman >/dev/null 2>&1; then
+        system_type="arch"
+    else
+        print_error "Unsupported system - only Debian/Ubuntu and Arch Linux are supported"
+        return 1
+    fi
+    
+    local llm_remote_file="llm-remote-${system_type}"
+    print_status "Detected ${system_type} system, looking for ${llm_remote_file}"
+    
+    # Check if the system-specific llm-remote script exists in the config folder
+    if [[ -f "$CONFIG_PATH/${llm_remote_file}" ]]; then
         # Create backup if file exists
         if [[ -f "/usr/local/bin/llm-remote" ]]; then
             local backup_file="/usr/local/bin/llm-remote.backup.$(date +%Y%m%d_%H%M%S)"
@@ -299,15 +313,24 @@ copy_llm_remote() {
             print_status "Backup created: $backup_file"
         fi
         
-        print_status "Copying llm-remote script to /usr/local/bin..."
-        sudo cp "$CONFIG_PATH/llm-remote" "/usr/local/bin/llm-remote"
+        print_status "Copying ${llm_remote_file} script to /usr/local/bin/llm-remote..."
+        sudo cp "$CONFIG_PATH/${llm_remote_file}" "/usr/local/bin/llm-remote"
         
         # Make the script executable
         sudo chmod +x "/usr/local/bin/llm-remote"
         
-        print_success "llm-remote script copied and made executable in /usr/local/bin"
+        print_success "llm-remote script (${llm_remote_file}) copied and made executable in /usr/local/bin"
     else
-        print_warning "llm-remote script not found in config folder"
+        print_warning "${llm_remote_file} script not found in config folder"
+        print_warning "Expected location: $CONFIG_PATH/${llm_remote_file}"
         print_warning "Skipping llm-remote script installation"
+        
+        # Check if the old single file exists as fallback
+        if [[ -f "$CONFIG_PATH/llm-remote" ]]; then
+            print_status "Found generic llm-remote file, using as fallback..."
+            sudo cp "$CONFIG_PATH/llm-remote" "/usr/local/bin/llm-remote"
+            sudo chmod +x "/usr/local/bin/llm-remote"
+            print_success "Generic llm-remote script copied as fallback"
+        fi
     fi
 }
