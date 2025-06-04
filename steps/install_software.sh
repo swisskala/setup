@@ -37,14 +37,17 @@ install_essential_software() {
        print_status "Installing rich-cli via pipx..."
        if pipx install rich-cli 2>/dev/null; then
            print_success "rich-cli installed successfully via pipx"
+           # Ensure pipx binaries are in PATH
+           pipx ensurepath 2>/dev/null || true
        else
-           print_warning "Failed to install rich-cli via pipx"
-           print_warning "You can install it manually later with: pipx install rich-cli"
+           print_warning "Failed to install rich-cli via pipx, trying pip3..."
+           if pip3 install --break-system-packages rich-cli 2>/dev/null; then
+               print_success "rich-cli installed successfully via pip3 (system-wide)"
+           else
+               print_warning "Failed to install rich-cli"
+               print_warning "You can install it manually later with: pipx install rich-cli"
+           fi
        fi
-       
-       # Ensure pipx binaries are in PATH
-       print_status "Ensuring pipx binaries are in PATH..."
-       pipx ensurepath 2>/dev/null || true
        
        # Install Mission Center via Flatpak for Debian systems
        print_status "Installing Mission Center via Flatpak..."
@@ -141,17 +144,36 @@ install_essential_software() {
    fi
    
    # Add pipx/user bin directories to PATH if not already there
+   PATH_ADDED=false
    if [[ "$SYSTEM" == "debian" ]]; then
-       if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-           print_status "Adding ~/.local/bin to PATH..."
-           echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-           print_success "Added ~/.local/bin to PATH (restart terminal or source ~/.bashrc)"
+       # Check if running as root and add appropriate paths
+       if [[ $EUID -eq 0 ]]; then
+           # Running as root - add root's local bin path
+           if [[ ":$PATH:" != *":/root/.local/bin:"* ]]; then
+               print_status "Adding /root/.local/bin to PATH..."
+               echo 'export PATH="/root/.local/bin:$PATH"' >> /root/.bashrc
+               export PATH="/root/.local/bin:$PATH"
+               PATH_ADDED=true
+           fi
+       else
+           # Running as regular user
+           if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+               print_status "Adding ~/.local/bin to PATH..."
+               echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+               export PATH="$HOME/.local/bin:$PATH"
+               PATH_ADDED=true
+           fi
        fi
    elif [[ "$SYSTEM" == "arch" ]]; then
        if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
            print_status "Adding ~/.local/bin to PATH..."
            echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-           print_success "Added ~/.local/bin to PATH (restart terminal or source ~/.bashrc)"
+           export PATH="$HOME/.local/bin:$PATH"
+           PATH_ADDED=true
        fi
+   fi
+   
+   if [[ "$PATH_ADDED" == true ]]; then
+       print_success "PATH updated - rich command should now be available"
    fi
 }
