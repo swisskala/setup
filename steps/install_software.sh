@@ -58,22 +58,63 @@ install_essential_software() {
        
        # Add Flathub repository with error handling
        print_status "Adding Flathub repository..."
-       if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-           print_success "Flathub repository added successfully"
+       FLATPAK_SUCCESS=false
+       
+       # Try system-wide installation if running as root
+       if [[ $EUID -eq 0 ]]; then
+           if flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+               print_success "Flathub repository added successfully (system-wide)"
+               FLATPAK_SUCCESS=true
+           elif flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+               print_success "Flathub repository added successfully (user)"
+               FLATPAK_SUCCESS=true
+           fi
        else
-           print_warning "Failed to add Flathub repository (network issue?)"
+           if sudo flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+               print_success "Flathub repository added successfully (system-wide)"
+               FLATPAK_SUCCESS=true
+           elif sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+               print_success "Flathub repository added successfully (user)"
+               FLATPAK_SUCCESS=true
+           fi
+       fi
+       
+       if [[ "$FLATPAK_SUCCESS" == false ]]; then
+           print_warning "Failed to add Flathub repository"
+           print_warning "This might be due to network issues or Flatpak configuration"
            print_warning "Skipping Mission Center installation via Flatpak"
-           print_success "Essential software installed successfully (apt only)"
+           print_warning "You can add Flathub manually later with:"
+           print_warning "  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+           print_success "Essential software installed successfully (apt + pipx only)"
            return
        fi
        
        # Install Mission Center with error handling
        print_status "Installing Mission Center from Flathub..."
-       if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-           print_success "Mission Center installed successfully via Flatpak"
+       MISSION_CENTER_SUCCESS=false
+       
+       if [[ $EUID -eq 0 ]]; then
+           if flatpak install --system -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+               print_success "Mission Center installed successfully via Flatpak (system-wide)"
+               MISSION_CENTER_SUCCESS=true
+           elif flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+               print_success "Mission Center installed successfully via Flatpak (user)"
+               MISSION_CENTER_SUCCESS=true
+           fi
        else
+           if sudo flatpak install --system -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+               print_success "Mission Center installed successfully via Flatpak (system-wide)"
+               MISSION_CENTER_SUCCESS=true
+           elif sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+               print_success "Mission Center installed successfully via Flatpak (user)"
+               MISSION_CENTER_SUCCESS=true
+           fi
+       fi
+       
+       if [[ "$MISSION_CENTER_SUCCESS" == false ]]; then
            print_warning "Failed to install Mission Center via Flatpak"
-           print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
+           print_warning "You can install it manually later with:"
+           print_warning "  flatpak install io.missioncenter.MissionCenter"
        fi
        
        print_success "Essential software installed successfully (apt + pipx + Flatpak)"
