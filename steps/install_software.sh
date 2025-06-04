@@ -55,7 +55,10 @@ install_essential_software() {
        
        # Install rich-cli via pipx (simpler and more reliable)
        print_status "Installing rich-cli via pipx..."
-       if pipx install rich-cli 2>/dev/null; then
+       # Ensure pipx is in PATH for this session
+       export PATH="$HOME/.local/bin:$PATH"
+       
+       if command -v pipx >/dev/null 2>&1 && pipx install rich-cli 2>/dev/null; then
            print_success "rich-cli installed successfully via pipx"
            pipx ensurepath 2>/dev/null || true
            
@@ -67,7 +70,7 @@ install_essential_software() {
                print_warning "You may need to restart your shell or run: source ~/.bashrc"
            fi
        else
-           print_warning "Failed to install rich-cli via pipx"
+           print_warning "Failed to install rich-cli via pipx (pipx may not be available yet)"
            print_warning "You can install it manually later with: pipx install rich-cli"
        fi
        
