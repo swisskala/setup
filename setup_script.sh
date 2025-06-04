@@ -18,8 +18,40 @@ source "$SCRIPT_DIR/steps/configure_dotfiles.sh"
 source "$SCRIPT_DIR/steps/configure_locale.sh"
 
 # Configuration paths (updated for new folder structure)
-export REPO_PATH="/tmp/setup_runner"
+export REPO_PATH="$SCRIPT_DIR"
 export CONFIG_PATH="$REPO_PATH/config"
+
+# Cleanup function
+cleanup_temp_files() {
+    # Check if we're running from a temporary location
+    if [[ "$SCRIPT_DIR" == /tmp/* ]]; then
+        print_status "Script is running from temporary location: $SCRIPT_DIR"
+        
+        # Ask user if they want to clean up
+        echo -n "Do you want to remove the temporary setup files? [y/N]: "
+        read -r response
+        
+        case "$response" in
+            [yY]|[yY][eE][sS])
+                print_status "Cleaning up temporary files..."
+                cd /
+                if rm -rf "$SCRIPT_DIR" 2>/dev/null; then
+                    print_success "Temporary setup files removed: $SCRIPT_DIR"
+                else
+                    print_warning "Failed to remove temporary files: $SCRIPT_DIR"
+                    print_warning "You may need to remove them manually with: sudo rm -rf $SCRIPT_DIR"
+                fi
+                ;;
+            *)
+                print_status "Keeping temporary files at: $SCRIPT_DIR"
+                print_status "You can remove them manually later with: rm -rf $SCRIPT_DIR"
+                ;;
+        esac
+    else
+        print_status "Script running from permanent location: $SCRIPT_DIR"
+        print_status "No cleanup needed."
+    fi
+}
 
 # Main execution
 main() {
@@ -52,6 +84,9 @@ main() {
     print_status ".xinitrc configuration will be used when starting X session with startx."
     print_status "QT style override will take effect after next login or reboot."
     print_status "Consider rebooting to ensure all locale changes take effect."
+    
+    # Cleanup temporary files if running from /tmp
+    cleanup_temp_files
 }
 
 # Run the main function
