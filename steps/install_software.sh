@@ -1,3 +1,7 @@
+# ============================================================================
+# FILE: install_software.sh
+# ============================================================================
+
 #!/bin/bash
 
 # Helper function for Mission Center Flatpak installation on Arch
@@ -31,20 +35,54 @@ install_essential_software() {
    
    if [[ "$SYSTEM" == "debian" ]]; then
        print_status "Installing software via apt..."
-       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect pipx
+       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential
        
-       # Install rich-cli via pipx
-       print_status "Installing rich-cli via pipx..."
-       if pipx install rich-cli 2>/dev/null; then
-           print_success "rich-cli installed successfully via pipx"
-           # Ensure pipx binaries are in PATH
-           pipx ensurepath 2>/dev/null || true
-       else
-           print_warning "Failed to install rich-cli via pipx, trying pip3..."
-           if pip3 install --break-system-packages rich-cli 2>/dev/null; then
-               print_success "rich-cli installed successfully via pip3 (system-wide)"
+       # Install rich-cli from source
+       print_status "Installing rich-cli from source..."
+       RICH_BUILD_DIR="/tmp/rich-cli-build"
+       if rm -rf "$RICH_BUILD_DIR" 2>/dev/null && \
+          git clone https://github.com/Textualize/rich-cli.git "$RICH_BUILD_DIR" 2>/dev/null && \
+          cd "$RICH_BUILD_DIR"; then
+           
+           print_status "Building rich-cli..."
+           if python3 -m venv venv 2>/dev/null && \
+              source venv/bin/activate && \
+              pip install --upgrade pip setuptools wheel 2>/dev/null && \
+              pip install . 2>/dev/null; then
+               
+               print_status "Installing rich-cli to /usr/bin..."
+               if sudo cp venv/bin/rich /usr/bin/rich 2>/dev/null && \
+                  sudo chmod +x /usr/bin/rich; then
+                   print_success "rich-cli installed successfully from source to /usr/bin"
+                   # Test installation
+                   if /usr/bin/rich --version >/dev/null 2>&1; then
+                       print_success "rich command is working correctly"
+                   else
+                       print_warning "rich installed but may have dependency issues"
+                   fi
+               else
+                   print_warning "Failed to copy rich to /usr/bin"
+               fi
            else
-               print_warning "Failed to install rich-cli"
+               print_warning "Failed to build rich-cli from source"
+           fi
+           
+           # Cleanup
+           cd - >/dev/null 2>&1
+           rm -rf "$RICH_BUILD_DIR" 2>/dev/null
+       else
+           print_warning "Failed to clone rich-cli repository"
+           print_warning "This might be due to network issues or missing git"
+       fi
+       
+       # Fallback: try pipx if source build failed
+       if ! command -v rich >/dev/null 2>&1; then
+           print_status "Source build failed, trying pipx as fallback..."
+           if pipx install rich-cli 2>/dev/null; then
+               print_success "rich-cli installed successfully via pipx (fallback)"
+               pipx ensurepath 2>/dev/null || true
+           else
+               print_warning "Both source build and pipx installation failed"
                print_warning "You can install it manually later with: pipx install rich-cli"
            fi
        fi
@@ -109,7 +147,7 @@ install_essential_software() {
            print_warning "  2. Try manually: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
            print_warning "  3. Check Flatpak status: flatpak --version && flatpak remotes"
            print_warning "Skipping Mission Center installation via Flatpak"
-           print_success "Essential software installed successfully (apt + pipx only)"
+           print_success "Essential software installed successfully (apt + source build only)"
            return
        fi
        
@@ -144,7 +182,7 @@ install_essential_software() {
            print_warning "  or: sudo flatpak install --system io.missioncenter.MissionCenter"
        fi
        
-       print_success "Essential software installed successfully (apt + pipx + Flatpak)"
+       print_success "Essential software installed successfully (apt + source build + Flatpak)"
        
    elif [[ "$SYSTEM" == "arch" ]]; then
        print_status "Installing software via pacman..."
@@ -211,37 +249,22 @@ install_essential_software() {
        print_warning "tealdeer not found in PATH, skipping cache initialization"
    fi
    
-   # Add pipx/user bin directories to PATH if not already there
-   PATH_ADDED=false
-   if [[ "$SYSTEM" == "debian" ]]; then
-       # Check if running as root and add appropriate paths
-       if [[ $EUID -eq 0 ]]; then
-           # Running as root - add root's local bin path
-           if [[ ":$PATH:" != *":/root/.local/bin:"* ]]; then
-               print_status "Adding /root/.local/bin to PATH..."
-               echo 'export PATH="/root/.local/bin:$PATH"' >> /root/.bashrc
-               export PATH="/root/.local/bin:$PATH"
-               PATH_ADDED=true
-           fi
-       else
-           # Running as regular user
-           if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-               print_status "Adding ~/.local/bin to PATH..."
-               echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-               export PATH="$HOME/.local/bin:$PATH"
-               PATH_ADDED=true
-           fi
-       fi
-   elif [[ "$SYSTEM" == "arch" ]]; then
-       if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-           print_status "Adding ~/.local/bin to PATH..."
-           echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-           export PATH="$HOME/.local/bin:$PATH"
-           PATH_ADDED=true
-       fi
-   fi
-   
-   if [[ "$PATH_ADDED" == true ]]; then
-       print_success "PATH updated - rich command should now be available"
-   fi
+   # No need to add PATH modifications since rich is installed to /usr/bin
+   print_success "Installation complete - rich command should be available system-wide"
 }
+
+# ============================================================================
+# FILE: llm-remote
+# ============================================================================
+
+#!/bin/bash
+
+SSH_HOST="claude@llm.lan"
+SSH_OPTIONS="-o ConnectTimeout=10 -o BatchMode=yes -t -q -o LogLevel=QUIET"
+
+if [ $# -eq 0 ]; then
+    echo "Usage: llm-remote [llm arguments]"
+    exit 1
+fi
+
+unbuffer ssh $SSH_OPTIONS $SSH_HOST "llm $(printf '%q ' "$@")" 2>&1 | rich --markdown -
