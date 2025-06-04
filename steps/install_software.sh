@@ -51,7 +51,7 @@ install_essential_software() {
    if [[ "$SYSTEM" == "debian" ]]; then
        print_status "Installing software via apt..."
        sudo apt update
-       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential
+       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential pipx
        
        # Install rich-cli from source
        print_status "Installing rich-cli from source..."
@@ -94,7 +94,6 @@ install_essential_software() {
        # Fallback: try pipx if source build failed
        if ! command -v rich >/dev/null 2>&1; then
            print_status "Source build failed, trying pipx as fallback..."
-           sudo apt install -y pipx
            if pipx install rich-cli 2>/dev/null; then
                print_success "rich-cli installed successfully via pipx (fallback)"
                pipx ensurepath 2>/dev/null || true
@@ -267,6 +266,47 @@ install_essential_software() {
    fi
    
    print_success "Installation complete - rich command should be available system-wide"
+   
+   # Install the correct llm-remote script based on system
+   print_status "Installing llm-remote script..."
+   
+   if [[ "$SYSTEM" == "debian" ]]; then
+       LLM_REMOTE_FILE="llm-remote-debian"
+   elif [[ "$SYSTEM" == "arch" ]]; then
+       LLM_REMOTE_FILE="llm-remote-arch"
+   fi
+   
+   # Check if we're in a git repository or if the config folder exists
+   if [[ -f "config/${LLM_REMOTE_FILE}" ]]; then
+       print_status "Found ${LLM_REMOTE_FILE} in config folder"
+       if sudo cp "config/${LLM_REMOTE_FILE}" /usr/local/bin/llm-remote 2>/dev/null && \
+          sudo chmod +x /usr/local/bin/llm-remote; then
+           print_success "llm-remote installed successfully to /usr/local/bin"
+       else
+           print_warning "Failed to install llm-remote to /usr/local/bin"
+           print_warning "You can install it manually with:"
+           print_warning "  sudo cp config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
+           print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
+       fi
+   elif [[ -f "../config/${LLM_REMOTE_FILE}" ]]; then
+       print_status "Found ${LLM_REMOTE_FILE} in ../config folder"
+       if sudo cp "../config/${LLM_REMOTE_FILE}" /usr/local/bin/llm-remote 2>/dev/null && \
+          sudo chmod +x /usr/local/bin/llm-remote; then
+           print_success "llm-remote installed successfully to /usr/local/bin"
+       else
+           print_warning "Failed to install llm-remote to /usr/local/bin"
+           print_warning "You can install it manually with:"
+           print_warning "  sudo cp ../config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
+           print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
+       fi
+   else
+       print_warning "Could not find ${LLM_REMOTE_FILE} in config folder"
+       print_warning "Please ensure you're running this script from the correct directory"
+       print_warning "Expected file location: config/${LLM_REMOTE_FILE}"
+       print_warning "You can install it manually later with:"
+       print_warning "  sudo cp config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
+       print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
+   fi
 }
 
 # Check if running as root (optional warning)
