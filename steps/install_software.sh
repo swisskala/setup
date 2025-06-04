@@ -56,35 +56,59 @@ install_essential_software() {
            sudo apt install -y flatpak
        fi
        
+       # Initialize Flatpak if needed
+       print_status "Initializing Flatpak..."
+       if [[ $EUID -eq 0 ]]; then
+           # Running as root - create system directories
+           mkdir -p /var/lib/flatpak
+           flatpak --version >/dev/null 2>&1 || true
+       else
+           # Running as user - create user directories  
+           mkdir -p ~/.local/share/flatpak
+           flatpak --version >/dev/null 2>&1 || true
+       fi
+       
        # Add Flathub repository with error handling
        print_status "Adding Flathub repository..."
        FLATPAK_SUCCESS=false
        
-       # Try system-wide installation if running as root
+       # Try different approaches based on user type
        if [[ $EUID -eq 0 ]]; then
-           if flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+           # Running as root - try system-wide first
+           print_status "Attempting system-wide Flathub installation..."
+           if flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
                print_success "Flathub repository added successfully (system-wide)"
                FLATPAK_SUCCESS=true
-           elif flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-               print_success "Flathub repository added successfully (user)"
-               FLATPAK_SUCCESS=true
+           else
+               print_status "System-wide failed, trying user installation..."
+               if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
+                   print_success "Flathub repository added successfully (user)"
+                   FLATPAK_SUCCESS=true
+               fi
            fi
        else
-           if sudo flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-               print_success "Flathub repository added successfully (system-wide)"
-               FLATPAK_SUCCESS=true
-           elif sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+           # Running as regular user - try user first, then system with sudo
+           print_status "Attempting user Flathub installation..."
+           if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
                print_success "Flathub repository added successfully (user)"
                FLATPAK_SUCCESS=true
+           else
+               print_status "User installation failed, trying system-wide with sudo..."
+               if sudo flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
+                   print_success "Flathub repository added successfully (system-wide)"
+                   FLATPAK_SUCCESS=true
+               fi
            fi
        fi
        
        if [[ "$FLATPAK_SUCCESS" == false ]]; then
            print_warning "Failed to add Flathub repository"
-           print_warning "This might be due to network issues or Flatpak configuration"
+           print_warning "This might be due to network issues, Flatpak configuration, or permissions"
+           print_warning "Troubleshooting steps:"
+           print_warning "  1. Check internet connection: curl -I https://dl.flathub.org"
+           print_warning "  2. Try manually: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+           print_warning "  3. Check Flatpak status: flatpak --version && flatpak remotes"
            print_warning "Skipping Mission Center installation via Flatpak"
-           print_warning "You can add Flathub manually later with:"
-           print_warning "  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
            print_success "Essential software installed successfully (apt + pipx only)"
            return
        fi
@@ -94,19 +118,21 @@ install_essential_software() {
        MISSION_CENTER_SUCCESS=false
        
        if [[ $EUID -eq 0 ]]; then
-           if flatpak install --system -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+           # Try system-wide first, then user
+           if flatpak install --system -y flathub io.missioncenter.MissionCenter; then
                print_success "Mission Center installed successfully via Flatpak (system-wide)"
                MISSION_CENTER_SUCCESS=true
-           elif flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+           elif flatpak install --user -y flathub io.missioncenter.MissionCenter; then
                print_success "Mission Center installed successfully via Flatpak (user)"
                MISSION_CENTER_SUCCESS=true
            fi
        else
-           if sudo flatpak install --system -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-               print_success "Mission Center installed successfully via Flatpak (system-wide)"
-               MISSION_CENTER_SUCCESS=true
-           elif sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+           # Try user first, then system with sudo
+           if flatpak install --user -y flathub io.missioncenter.MissionCenter; then
                print_success "Mission Center installed successfully via Flatpak (user)"
+               MISSION_CENTER_SUCCESS=true
+           elif sudo flatpak install --system -y flathub io.missioncenter.MissionCenter; then
+               print_success "Mission Center installed successfully via Flatpak (system-wide)"
                MISSION_CENTER_SUCCESS=true
            fi
        fi
@@ -114,7 +140,8 @@ install_essential_software() {
        if [[ "$MISSION_CENTER_SUCCESS" == false ]]; then
            print_warning "Failed to install Mission Center via Flatpak"
            print_warning "You can install it manually later with:"
-           print_warning "  flatpak install io.missioncenter.MissionCenter"
+           print_warning "  flatpak install --user io.missioncenter.MissionCenter"
+           print_warning "  or: sudo flatpak install --system io.missioncenter.MissionCenter"
        fi
        
        print_success "Essential software installed successfully (apt + pipx + Flatpak)"
