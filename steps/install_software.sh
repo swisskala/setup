@@ -266,47 +266,6 @@ install_essential_software() {
    fi
    
    print_success "Installation complete - rich command should be available system-wide"
-   
-   # Install the correct llm-remote script based on system
-   print_status "Installing llm-remote script..."
-   
-   if [[ "$SYSTEM" == "debian" ]]; then
-       LLM_REMOTE_FILE="llm-remote-debian"
-   elif [[ "$SYSTEM" == "arch" ]]; then
-       LLM_REMOTE_FILE="llm-remote-arch"
-   fi
-   
-   # Check if we're in a git repository or if the config folder exists
-   if [[ -f "config/${LLM_REMOTE_FILE}" ]]; then
-       print_status "Found ${LLM_REMOTE_FILE} in config folder"
-       if sudo cp "config/${LLM_REMOTE_FILE}" /usr/local/bin/llm-remote 2>/dev/null && \
-          sudo chmod +x /usr/local/bin/llm-remote; then
-           print_success "llm-remote installed successfully to /usr/local/bin"
-       else
-           print_warning "Failed to install llm-remote to /usr/local/bin"
-           print_warning "You can install it manually with:"
-           print_warning "  sudo cp config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
-           print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
-       fi
-   elif [[ -f "../config/${LLM_REMOTE_FILE}" ]]; then
-       print_status "Found ${LLM_REMOTE_FILE} in ../config folder"
-       if sudo cp "../config/${LLM_REMOTE_FILE}" /usr/local/bin/llm-remote 2>/dev/null && \
-          sudo chmod +x /usr/local/bin/llm-remote; then
-           print_success "llm-remote installed successfully to /usr/local/bin"
-       else
-           print_warning "Failed to install llm-remote to /usr/local/bin"
-           print_warning "You can install it manually with:"
-           print_warning "  sudo cp ../config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
-           print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
-       fi
-   else
-       print_warning "Could not find ${LLM_REMOTE_FILE} in config folder"
-       print_warning "Please ensure you're running this script from the correct directory"
-       print_warning "Expected file location: config/${LLM_REMOTE_FILE}"
-       print_warning "You can install it manually later with:"
-       print_warning "  sudo cp config/${LLM_REMOTE_FILE} /usr/local/bin/llm-remote"
-       print_warning "  sudo chmod +x /usr/local/bin/llm-remote"
-   fi
 }
 
 # Check if running as root (optional warning)
@@ -320,4 +279,4 @@ install_essential_software
 
 print_success "Installation script completed!"
 print_status "You can now test the rich command with: rich --help"
-print_status "Don't forget to create your llm-remote script separately!"
+print_status "Note: llm-remote script installation is handled separately by the dotfiles configuration script"
