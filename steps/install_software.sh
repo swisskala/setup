@@ -61,6 +61,7 @@ install_essential_software() {
        if command -v pipx >/dev/null 2>&1 && pipx install rich-cli 2>/dev/null; then
            print_success "rich-cli installed successfully via pipx"
            pipx ensurepath 2>/dev/null || true
+           source ~/.bashrc 2>/dev/null || true
            
            # Test installation
            if command -v rich >/dev/null 2>&1 && rich --version >/dev/null 2>&1; then
