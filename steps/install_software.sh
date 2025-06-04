@@ -1,24 +1,5 @@
 #!/bin/bash
 
-# Color output functions
-print_status() { echo -e "\e[34m[INFO]\e[0m $1"; }
-print_success() { echo -e "\e[32m[SUCCESS]\e[0m $1"; }
-print_warning() { echo -e "\e[33m[WARNING]\e[0m $1"; }
-print_error() { echo -e "\e[31m[ERROR]\e[0m $1"; }
-
-# Detect system
-print_status "Detecting system type..."
-if command -v apt >/dev/null 2>&1; then
-    SYSTEM="debian"
-    print_success "Detected Debian/Ubuntu system"
-elif command -v pacman >/dev/null 2>&1; then
-    SYSTEM="arch"
-    print_success "Detected Arch Linux system"
-else
-    print_error "Unsupported system - only Debian/Ubuntu and Arch Linux are supported"
-    exit 1
-fi
-
 # Helper function for Mission Center Flatpak installation on Arch
 install_mission_center_flatpak_arch() {
     if ! command -v flatpak &> /dev/null; then
@@ -44,36 +25,74 @@ install_mission_center_flatpak_arch() {
     fi
 }
 
-# Main installation function
+# Function to install rich-cli
+install_rich_cli() {
+    print_status "Installing rich-cli..."
+    
+    if [[ "$SYSTEM" == "debian" ]]; then
+        # Install rich-cli via pipx for system-wide access
+        print_status "Installing rich-cli via pipx for system-wide access..."
+        
+        # Install rich-cli system-wide so all users can access it
+        if sudo pipx install --global rich-cli 2>/dev/null; then
+            print_success "rich-cli installed successfully system-wide via pipx"
+            
+            # Ensure the global pipx bin directory is in system PATH
+            echo 'export PATH="/opt/pipx_global/bin:$PATH"' | sudo tee /etc/profile.d/pipx-global.sh > /dev/null
+            sudo chmod +x /etc/profile.d/pipx-global.sh
+            
+            # Make it available in current session
+            export PATH="/opt/pipx_global/bin:$PATH"
+            
+            # Test installation
+            if command -v rich >/dev/null 2>&1 && rich --version >/dev/null 2>&1; then
+                print_success "rich command is working correctly and will be available after reboot"
+            else
+                print_warning "rich installed but may require a shell restart to be fully accessible"
+            fi
+        else
+            print_warning "Failed to install rich-cli system-wide via pipx"
+            print_warning "Trying user installation as fallback..."
+            
+            # Fallback to user installation
+            if pipx install rich-cli 2>/dev/null; then
+                print_success "rich-cli installed successfully for current user via pipx"
+                pipx ensurepath 2>/dev/null || true
+                source ~/.bashrc 2>/dev/null || true
+                print_warning "rich-cli installed for current user only - other users will need to install it separately"
+            else
+                print_warning "Failed to install rich-cli via pipx"
+                print_warning "You can install it manually later with: pipx install rich-cli"
+            fi
+        fi
+        
+    elif [[ "$SYSTEM" == "arch" ]]; then
+        # Install rich-cli via AUR using yay
+        print_status "Installing rich-cli via AUR..."
+        if command -v yay &> /dev/null; then
+            if yay -S --needed --noconfirm rich-cli 2>/dev/null; then
+                print_success "rich-cli installed successfully via AUR"
+                print_success "rich command will be available system-wide after reboot"
+            else
+                print_warning "Failed to install rich-cli via AUR"
+                print_warning "You can install it manually later with: yay -S rich-cli"
+            fi
+        else
+            print_warning "yay not available, skipping rich-cli installation"
+            print_warning "Install yay first, then run: yay -S rich-cli"
+        fi
+    fi
+    
+    print_success "rich-cli installation completed"
+}
+
+# Step 3: Install essential software
 install_essential_software() {
-   print_status "Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, i3, picom, polkit, xfce-polkit, maim, xclip, mission-center, unbuffer, rich-cli)..."
+   print_status "Step 3: Installing essential software (kitty, mc, ncdu, unzip, btop, lsd, tealdeer, nano, i3, picom, polkit, xfce-polkit, maim, xclip, mission-center)..."
    
    if [[ "$SYSTEM" == "debian" ]]; then
        print_status "Installing software via apt..."
-       sudo apt update
-       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect python3-pip python3-venv git build-essential pipx
-       
-       # Install rich-cli via pipx (simpler and more reliable)
-       print_status "Installing rich-cli via pipx..."
-       # Ensure pipx is in PATH for this session
-       export PATH="$HOME/.local/bin:$PATH"
-       
-       if command -v pipx >/dev/null 2>&1 && pipx install rich-cli 2>/dev/null; then
-           print_success "rich-cli installed successfully via pipx"
-           pipx ensurepath 2>/dev/null || true
-           source ~/.bashrc 2>/dev/null || true
-           
-           # Test installation
-           if command -v rich >/dev/null 2>&1 && rich --version >/dev/null 2>&1; then
-               print_success "rich command is working correctly"
-           else
-               print_warning "rich installed but may not be in PATH yet"
-               print_warning "You may need to restart your shell or run: source ~/.bashrc"
-           fi
-       else
-           print_warning "Failed to install rich-cli via pipx (pipx may not be available yet)"
-           print_warning "You can install it manually later with: pipx install rich-cli"
-       fi
+       sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect pipx
        
        # Install Mission Center via Flatpak for Debian systems
        print_status "Installing Mission Center via Flatpak..."
@@ -82,123 +101,31 @@ install_essential_software() {
            sudo apt install -y flatpak
        fi
        
-       # Initialize Flatpak if needed
-       print_status "Initializing Flatpak..."
-       if [[ $EUID -eq 0 ]]; then
-           # Running as root - create system directories
-           mkdir -p /var/lib/flatpak
-           flatpak --version >/dev/null 2>&1 || true
-       else
-           # Running as user - create user directories  
-           mkdir -p ~/.local/share/flatpak
-           flatpak --version >/dev/null 2>&1 || true
-       fi
-       
        # Add Flathub repository with error handling
        print_status "Adding Flathub repository..."
-       FLATPAK_SUCCESS=false
-       
-       # Try different approaches based on user type
-       if [[ $EUID -eq 0 ]]; then
-           # Running as root - try system-wide first
-           print_status "Attempting system-wide Flathub installation..."
-           if flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-               print_success "Flathub repository added successfully (system-wide)"
-               FLATPAK_SUCCESS=true
-           else
-               print_status "System-wide failed, trying user installation..."
-               if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-                   print_success "Flathub repository added successfully (user)"
-                   FLATPAK_SUCCESS=true
-               fi
-           fi
+       if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+           print_success "Flathub repository added successfully"
        else
-           # Running as regular user - try user first, then system with sudo
-           print_status "Attempting user Flathub installation..."
-           if flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-               print_success "Flathub repository added successfully (user)"
-               FLATPAK_SUCCESS=true
-           else
-               print_status "User installation failed, trying system-wide with sudo..."
-               if sudo flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; then
-                   print_success "Flathub repository added successfully (system-wide)"
-                   FLATPAK_SUCCESS=true
-               fi
-           fi
-       fi
-       
-       if [[ "$FLATPAK_SUCCESS" == false ]]; then
-           print_warning "Failed to add Flathub repository"
-           print_warning "This might be due to network issues, Flatpak configuration, or permissions"
-           print_warning "Troubleshooting steps:"
-           print_warning "  1. Check internet connection: curl -I https://dl.flathub.org"
-           print_warning "  2. Try manually: flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-           print_warning "  3. Check Flatpak status: flatpak --version && flatpak remotes"
+           print_warning "Failed to add Flathub repository (network issue?)"
            print_warning "Skipping Mission Center installation via Flatpak"
-           print_success "Essential software installed successfully (apt + source build only)"
+           print_success "Essential software installed successfully (apt only)"
            return
        fi
        
        # Install Mission Center with error handling
        print_status "Installing Mission Center from Flathub..."
-       MISSION_CENTER_SUCCESS=false
-       
-       if [[ $EUID -eq 0 ]]; then
-           # Try system-wide first, then user
-           if flatpak install --system -y flathub io.missioncenter.MissionCenter; then
-               print_success "Mission Center installed successfully via Flatpak (system-wide)"
-               MISSION_CENTER_SUCCESS=true
-           elif flatpak install --user -y flathub io.missioncenter.MissionCenter; then
-               print_success "Mission Center installed successfully via Flatpak (user)"
-               MISSION_CENTER_SUCCESS=true
-           fi
+       if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
+           print_success "Mission Center installed successfully via Flatpak"
        else
-           # Try user first, then system with sudo
-           if flatpak install --user -y flathub io.missioncenter.MissionCenter; then
-               print_success "Mission Center installed successfully via Flatpak (user)"
-               MISSION_CENTER_SUCCESS=true
-           elif sudo flatpak install --system -y flathub io.missioncenter.MissionCenter; then
-               print_success "Mission Center installed successfully via Flatpak (system-wide)"
-               MISSION_CENTER_SUCCESS=true
-           fi
-       fi
-       
-       if [[ "$MISSION_CENTER_SUCCESS" == false ]]; then
            print_warning "Failed to install Mission Center via Flatpak"
-           print_warning "You can install it manually later with:"
-           print_warning "  flatpak install --user io.missioncenter.MissionCenter"
-           print_warning "  or: sudo flatpak install --system io.missioncenter.MissionCenter"
+           print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
        fi
        
-       print_success "Essential software installed successfully (apt + source build + Flatpak)"
+       print_success "Essential software installed successfully (apt + Flatpak)"
        
    elif [[ "$SYSTEM" == "arch" ]]; then
        print_status "Installing software via pacman..."
-       sudo pacman -Sy --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano i3-wm picom polkit maim xclip expect python-pip
-       
-       # Install rich-cli via AUR
-       print_status "Installing rich-cli via AUR..."
-       if command -v yay &> /dev/null; then
-           if yay -S --needed --noconfirm rich-cli 2>/dev/null; then
-               print_success "rich-cli installed successfully via AUR"
-           else
-               print_warning "Failed to install rich-cli via AUR, trying pip..."
-               if pip install --user rich-cli 2>/dev/null; then
-                   print_success "rich-cli installed successfully via pip"
-               else
-                   print_warning "Failed to install rich-cli via pip"
-                   print_warning "You can install it manually later with: yay -S rich-cli or pip install rich-cli"
-               fi
-           fi
-       else
-           print_warning "yay not available, installing rich-cli via pip..."
-           if pip install --user rich-cli 2>/dev/null; then
-               print_success "rich-cli installed successfully via pip"
-           else
-               print_warning "Failed to install rich-cli via pip"
-               print_warning "You can install it manually later with: pip install rich-cli"
-           fi
-       fi
+       sudo pacman -S --needed --noconfirm kitty mc ncdu unzip btop lsd tealdeer nano i3-wm picom polkit maim xclip expect
        
        # Install xfce-polkit via AUR
        print_status "Installing xfce-polkit via AUR..."
@@ -225,7 +152,7 @@ install_essential_software() {
            print_warning "yay not available, installing Mission Center via Flatpak..."
            install_mission_center_flatpak_arch
        fi
-       print_success "Essential software installed successfully (pacman + pip + AUR/Flatpak)"
+       print_success "Essential software installed successfully (pacman + AUR/Flatpak)"
    fi
    
    # Initialize tealdeer cache
@@ -237,18 +164,6 @@ install_essential_software() {
        print_warning "tealdeer not found in PATH, skipping cache initialization"
    fi
    
-   print_success "Installation complete - rich command should be available system-wide"
+   # Install rich-cli
+   install_rich_cli
 }
-
-# Check if running as root (optional warning)
-if [[ $EUID -eq 0 ]]; then
-    print_warning "Running as root - some installations may behave differently"
-fi
-
-# Run the installation
-print_status "Starting essential software installation..."
-install_essential_software
-
-print_success "Installation script completed!"
-print_status "You can now test the rich command with: rich --help"
-print_status "Note: llm-remote script installation is handled separately by the dotfiles configuration script"
