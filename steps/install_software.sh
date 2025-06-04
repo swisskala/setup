@@ -201,12 +201,24 @@ install_rich_cli() {
         # Install rich-cli via AUR using yay
         print_status "Installing rich-cli via AUR..."
         if command -v yay &> /dev/null; then
-            if yay -S --needed --noconfirm rich-cli 2>/dev/null; then
+            print_status "Running: yay -S --needed --noconfirm rich-cli"
+            # Remove the error suppression to see what's actually happening
+            if yay -S --needed --noconfirm rich-cli; then
                 print_success "rich-cli installed successfully via AUR"
-                print_success "rich command will be available system-wide after reboot"
+                # Verify the installation
+                if command -v rich >/dev/null 2>&1; then
+                    print_success "rich command is now available"
+                else
+                    print_warning "rich-cli may have been installed but command not found in PATH"
+                    print_status "Checking if rich is installed via pacman..."
+                    if pacman -Qi rich-cli >/dev/null 2>&1; then
+                        print_status "rich-cli package is installed, you may need to restart your shell"
+                    fi
+                fi
             else
-                print_warning "Failed to install rich-cli via AUR"
-                print_warning "You can install it manually later with: yay -S rich-cli"
+                print_error "Failed to install rich-cli via AUR"
+                print_status "Error details should be visible above"
+                print_warning "You can try installing it manually with: yay -S rich-cli"
             fi
         else
             print_warning "yay not available, skipping rich-cli installation"
