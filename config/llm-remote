@@ -9,4 +9,4 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-ssh $SSH_OPTIONS $SSH_HOST "llm $(printf '%q ' "$@")" 2>&1
+unbuffer ssh $SSH_OPTIONS $SSH_HOST "llm $(printf '%q ' "$@")" 2>&1 | rich --markdown -
