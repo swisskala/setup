@@ -56,6 +56,8 @@ install_essential_software() {
        # Install rich-cli from source
        print_status "Installing rich-cli from source..."
        RICH_BUILD_DIR="/tmp/rich-cli-build"
+       RICH_SOURCE_SUCCESS=false
+       
        if rm -rf "$RICH_BUILD_DIR" 2>/dev/null && \
           git clone https://github.com/Textualize/rich-cli.git "$RICH_BUILD_DIR" 2>/dev/null && \
           cd "$RICH_BUILD_DIR"; then
@@ -70,9 +72,10 @@ install_essential_software() {
                if sudo cp venv/bin/rich /usr/bin/rich 2>/dev/null && \
                   sudo chmod +x /usr/bin/rich; then
                    print_success "rich-cli installed successfully from source to /usr/bin"
-                   # Test installation
+                   # Test installation with the actual binary path
                    if /usr/bin/rich --version >/dev/null 2>&1; then
                        print_success "rich command is working correctly"
+                       RICH_SOURCE_SUCCESS=true
                    else
                        print_warning "rich installed but may have dependency issues"
                    fi
@@ -91,8 +94,8 @@ install_essential_software() {
            print_warning "This might be due to network issues or missing git"
        fi
        
-       # Fallback: try pipx if source build failed
-       if ! command -v rich >/dev/null 2>&1; then
+       # Fallback: try pipx only if source build actually failed
+       if [[ "$RICH_SOURCE_SUCCESS" == false ]]; then
            print_status "Source build failed, trying pipx as fallback..."
            if pipx install rich-cli 2>/dev/null; then
                print_success "rich-cli installed successfully via pipx (fallback)"
