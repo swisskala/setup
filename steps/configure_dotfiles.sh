@@ -84,9 +84,9 @@ copy_kitty_config() {
         local font_size=14  # default font size
         
         case "$hostname" in
-            "surfarch")
+            "surfarch"|"legacy")
                 font_size=22
-                print_status "Detected surfarch hostname, setting font size to 22"
+                print_status "Detected $hostname hostname, setting font size to 22"
                 ;;
             "thinkarch")
                 font_size=16
