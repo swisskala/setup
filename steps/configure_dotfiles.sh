@@ -1,8 +1,28 @@
 #!/bin/bash
 
+# Helper function to ask yes/no questions
+ask_yes_no() {
+    local question="$1"
+    local response
+    
+    while true; do
+        read -p "$question (y/n): " response
+        case $response in
+            [Yy]* ) return 0;;
+            [Nn]* ) return 1;;
+            * ) echo "Please answer yes (y) or no (n).";;
+        esac
+    done
+}
+
 # Step 5: Replace .bashrc with version from GitHub repo
 replace_bashrc() {
     print_status "Step 5: Replacing .bashrc with version from GitHub repo..."
+    
+    if ! ask_yes_no "Do you want to replace .bashrc with the version from GitHub repo?"; then
+        print_status "Skipping .bashrc replacement"
+        return 0
+    fi
     
     # Create backup if .bashrc exists
     if [[ -f "$HOME/.bashrc" ]]; then
@@ -29,6 +49,11 @@ replace_bashrc() {
 copy_kde_shortcuts() {
     print_status "Step 6: Copying KDE shortcuts configuration..."
     
+    if ! ask_yes_no "Do you want to copy KDE shortcuts configuration?"; then
+        print_status "Skipping KDE shortcuts configuration"
+        return 0
+    fi
+    
     # Create .config directory if it doesn't exist
     mkdir -p "$HOME/.config"
     
@@ -53,6 +78,11 @@ copy_kde_shortcuts() {
 # Step 7: Copy kitty configuration
 copy_kitty_config() {
     print_status "Step 7: Copying kitty configuration..."
+    
+    if ! ask_yes_no "Do you want to copy kitty configuration?"; then
+        print_status "Skipping kitty configuration"
+        return 0
+    fi
     
     # Create .config/kitty directory if it doesn't exist
     mkdir -p "$HOME/.config/kitty"
@@ -120,6 +150,11 @@ copy_kitty_config() {
 copy_i3_config() {
     print_status "Step 8: Copying i3 configuration..."
     
+    if ! ask_yes_no "Do you want to copy i3 configuration (including i3blocks and i3status)?"; then
+        print_status "Skipping i3 configuration"
+        return 0
+    fi
+    
     # Create .config/i3 directory if it doesn't exist
     mkdir -p "$HOME/.config/i3"
     
@@ -177,6 +212,11 @@ copy_i3_config() {
 copy_xinitrc() {
     print_status "Step 9: Copying .xinitrc configuration..."
     
+    if ! ask_yes_no "Do you want to copy .xinitrc configuration?"; then
+        print_status "Skipping .xinitrc configuration"
+        return 0
+    fi
+    
     # Check if xinitrc file exists in the config folder
     if [[ -f "$CONFIG_PATH/xinitrc" ]]; then
         # Create backup if file exists
@@ -203,6 +243,11 @@ copy_xinitrc() {
 copy_picom_config() {
     print_status "Step 10: Copying picom configuration..."
     
+    if ! ask_yes_no "Do you want to copy picom configuration?"; then
+        print_status "Skipping picom configuration"
+        return 0
+    fi
+    
     # Create .config directory if it doesn't exist
     mkdir -p "$HOME/.config"
     
@@ -227,6 +272,11 @@ copy_picom_config() {
 # Step 12: Replace .profile and .bash_profile with versions from GitHub repo
 create_profile() {
     print_status "Step 11: Replacing .profile and .bash_profile with versions from GitHub repo..."
+    
+    if ! ask_yes_no "Do you want to replace .profile and .bash_profile with versions from GitHub repo?"; then
+        print_status "Skipping profile configuration"
+        return 0
+    fi
     
     # Handle .profile
     if [[ -f "$HOME/.profile" ]]; then
@@ -289,6 +339,11 @@ create_profile() {
 # Step 13: Copy llm-remote script to /usr/local/bin
 copy_llm_remote() {
     print_status "Step 12: Copying llm-remote script to /usr/local/bin..."
+    
+    if ! ask_yes_no "Do you want to copy llm-remote script to /usr/local/bin?"; then
+        print_status "Skipping llm-remote script installation"
+        return 0
+    fi
     
     # Detect system type
     local system_type=""
