@@ -40,8 +40,56 @@ install_essential_software() {
     
     if [[ "$SYSTEM" == "debian" ]]; then
         print_status "Installing software via apt..."
-        sudo apt install -y kitty mc ncdu unzip btop lsd tealdeer nano i3 picom policykit-1 xfce4-notifyd maim xclip expect pipx
-        print_success "Essential software installed successfully (apt)"
+        
+        # Base packages that should be available on all Debian/Ubuntu versions
+        local base_packages="kitty mc ncdu unzip btop lsd tealdeer nano i3 picom xfce4-notifyd maim xclip expect pipx"
+        
+        # Handle polkit packages based on system version
+        local polkit_packages=""
+        if command -v lsb_release &> /dev/null; then
+            local ubuntu_version=$(lsb_release -rs 2>/dev/null)
+            local version_major=$(echo "$ubuntu_version" | cut -d. -f1)
+            
+            # Ubuntu 25+ uses polkitd and pkexec instead of policykit-1
+            if [[ "$version_major" -ge 25 ]] 2>/dev/null; then
+                print_status "Detected Ubuntu $ubuntu_version - using polkitd and pkexec"
+                polkit_packages="polkitd pkexec"
+            else
+                print_status "Detected Ubuntu $ubuntu_version - using policykit-1"
+                polkit_packages="policykit-1"
+            fi
+        else
+            # Fallback: try to detect if policykit-1 is available
+            print_status "Could not detect Ubuntu version, checking package availability..."
+            if apt-cache show policykit-1 &>/dev/null; then
+                print_status "policykit-1 is available - using it"
+                polkit_packages="policykit-1"
+            else
+                print_status "policykit-1 not available - using polkitd and pkexec"
+                polkit_packages="polkitd pkexec"
+            fi
+        fi
+        
+        # Combine base packages with polkit packages
+        local all_packages="$base_packages $polkit_packages"
+        
+        print_status "Installing packages: $all_packages"
+        if sudo apt install -y $all_packages; then
+            print_success "Essential software installed successfully (apt)"
+        else
+            print_error "Failed to install some packages via apt"
+            print_status "Trying to install packages individually to identify issues..."
+            
+            # Try installing packages one by one to identify problematic ones
+            for package in $all_packages; do
+                print_status "Installing $package..."
+                if sudo apt install -y "$package"; then
+                    print_success "$package installed successfully"
+                else
+                    print_warning "Failed to install $package - skipping"
+                fi
+            done
+        fi
         
     elif [[ "$SYSTEM" == "arch" ]]; then
         print_status "Installing software via pacman..."
