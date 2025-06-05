@@ -84,13 +84,43 @@ install_flatpak() {
             print_status "Flatpak already installed"
         fi
         
-        # Add Flathub repository with error handling
-        print_status "Adding Flathub repository..."
-        if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-            print_success "Flathub repository added successfully"
+        # Download and add Flathub repository
+        print_status "Downloading Flathub repository file..."
+        local repo_file="/tmp/flathub.flatpakrepo"
+        
+        # Try wget first, fallback to curl
+        if command -v wget &> /dev/null; then
+            if wget -O "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+                print_success "Flathub repository file downloaded successfully with wget"
+            else
+                print_error "Failed to download Flathub repository file with wget"
+                return 1
+            fi
+        elif command -v curl &> /dev/null; then
+            if curl -o "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+                print_success "Flathub repository file downloaded successfully with curl"
+            else
+                print_error "Failed to download Flathub repository file with curl"
+                return 1
+            fi
         else
-            print_warning "Failed to add Flathub repository (network issue?)"
+            print_error "Neither wget nor curl available - cannot download Flathub repository file"
             print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+            return 1
+        fi
+        
+        # Add the repository using the downloaded file
+        print_status "Adding Flathub repository from downloaded file..."
+        if sudo flatpak remote-add --if-not-exists flathub "$repo_file" 2>/dev/null; then
+            print_success "Flathub repository added successfully"
+            # Clean up the temporary file
+            rm -f "$repo_file"
+        else
+            print_error "Failed to add Flathub repository from downloaded file"
+            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+            # Clean up the temporary file even on failure
+            rm -f "$repo_file"
+            return 1
         fi
         
     elif [[ "$SYSTEM" == "arch" ]]; then
@@ -101,15 +131,47 @@ install_flatpak() {
             print_status "Flatpak already installed"
         fi
         
-        print_status "Adding Flathub repository..."
-        if sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-            print_success "Flathub repository added successfully"
+        # Download and add Flathub repository
+        print_status "Downloading Flathub repository file..."
+        local repo_file="/tmp/flathub.flatpakrepo"
+        
+        # Try wget first, fallback to curl
+        if command -v wget &> /dev/null; then
+            if wget -O "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+                print_success "Flathub repository file downloaded successfully with wget"
+            else
+                print_error "Failed to download Flathub repository file with wget"
+                return 1
+            fi
+        elif command -v curl &> /dev/null; then
+            if curl -o "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
+                print_success "Flathub repository file downloaded successfully with curl"
+            else
+                print_error "Failed to download Flathub repository file with curl"
+                return 1
+            fi
         else
-            print_warning "Failed to add Flathub repository (network issue?)"
+            print_error "Neither wget nor curl available - cannot download Flathub repository file"
             print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+            return 1
+        fi
+        
+        # Add the repository using the downloaded file
+        print_status "Adding Flathub repository from downloaded file..."
+        if sudo flatpak remote-add --if-not-exists flathub "$repo_file" 2>/dev/null; then
+            print_success "Flathub repository added successfully"
+            # Clean up the temporary file
+            rm -f "$repo_file"
+        else
+            print_error "Failed to add Flathub repository from downloaded file"
+            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
+            # Clean up the temporary file even on failure
+            rm -f "$repo_file"
+            return 1
         fi
     fi
 }
+
 
 # Step 4: Install Mission Center
 install_mission_center() {
