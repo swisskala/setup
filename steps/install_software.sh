@@ -120,155 +120,29 @@ install_essential_software() {
     fi
 }
 
-# Step 3: Install Flatpak
-install_flatpak() {
-    print_status "Step 3: Installing Flatpak..."
-    
-    if [[ "$SYSTEM" == "debian" ]]; then
-        if ! command -v flatpak &> /dev/null; then
-            print_status "Installing Flatpak via apt..."
-            sudo apt install -y flatpak
-        else
-            print_status "Flatpak already installed"
-        fi
-        
-        # Download and add Flathub repository
-        print_status "Downloading Flathub repository file..."
-        local repo_file="/tmp/flathub.flatpakrepo"
-        
-        # Try wget first, fallback to curl
-        if command -v wget &> /dev/null; then
-            if wget -O "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-                print_success "Flathub repository file downloaded successfully with wget"
-            else
-                print_error "Failed to download Flathub repository file with wget"
-                return 1
-            fi
-        elif command -v curl &> /dev/null; then
-            if curl -o "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-                print_success "Flathub repository file downloaded successfully with curl"
-            else
-                print_error "Failed to download Flathub repository file with curl"
-                return 1
-            fi
-        else
-            print_error "Neither wget nor curl available - cannot download Flathub repository file"
-            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-            return 1
-        fi
-        
-        # Add the repository using the downloaded file
-        print_status "Adding Flathub repository from downloaded file..."
-        if sudo flatpak remote-add --if-not-exists flathub "$repo_file" 2>/dev/null; then
-            print_success "Flathub repository added successfully"
-            # Clean up the temporary file
-            rm -f "$repo_file"
-        else
-            print_error "Failed to add Flathub repository from downloaded file"
-            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-            # Clean up the temporary file even on failure
-            rm -f "$repo_file"
-            return 1
-        fi
-        
-    elif [[ "$SYSTEM" == "arch" ]]; then
-        if ! command -v flatpak &> /dev/null; then
-            print_status "Installing Flatpak via pacman..."
-            sudo pacman -S --needed --noconfirm flatpak
-        else
-            print_status "Flatpak already installed"
-        fi
-        
-        # Download and add Flathub repository
-        print_status "Downloading Flathub repository file..."
-        local repo_file="/tmp/flathub.flatpakrepo"
-        
-        # Try wget first, fallback to curl
-        if command -v wget &> /dev/null; then
-            if wget -O "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-                print_success "Flathub repository file downloaded successfully with wget"
-            else
-                print_error "Failed to download Flathub repository file with wget"
-                return 1
-            fi
-        elif command -v curl &> /dev/null; then
-            if curl -o "$repo_file" https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null; then
-                print_success "Flathub repository file downloaded successfully with curl"
-            else
-                print_error "Failed to download Flathub repository file with curl"
-                return 1
-            fi
-        else
-            print_error "Neither wget nor curl available - cannot download Flathub repository file"
-            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-            return 1
-        fi
-        
-        # Add the repository using the downloaded file
-        print_status "Adding Flathub repository from downloaded file..."
-        if sudo flatpak remote-add --if-not-exists flathub "$repo_file" 2>/dev/null; then
-            print_success "Flathub repository added successfully"
-            # Clean up the temporary file
-            rm -f "$repo_file"
-        else
-            print_error "Failed to add Flathub repository from downloaded file"
-            print_warning "You can add Flathub manually later with: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo"
-            # Clean up the temporary file even on failure
-            rm -f "$repo_file"
-            return 1
-        fi
-    fi
-}
-
-
-# Step 4: Install Mission Center
+# Step 3: Install Mission Center (Arch only)
 install_mission_center() {
-    print_status "Step 4: Installing Mission Center..."
-    
-    if [[ "$SYSTEM" == "debian" ]]; then
-        # Install Mission Center via Flatpak for Debian systems
-        print_status "Installing Mission Center via Flatpak..."
-        if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-            print_success "Mission Center installed successfully via Flatpak"
-        else
-            print_warning "Failed to install Mission Center via Flatpak"
-            print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
-        fi
-        
-    elif [[ "$SYSTEM" == "arch" ]]; then
-        # Install Mission Center via AUR
-        print_status "Installing Mission Center via AUR..."
+    if [[ "$SYSTEM" == "arch" ]]; then
+        print_status "Step 3: Installing Mission Center via AUR..."
         if command -v yay &> /dev/null; then
             if yay -S --needed --noconfirm mission-center 2>/dev/null; then
                 print_success "Mission Center installed successfully via AUR"
             else
-                print_warning "Failed to install Mission Center via AUR, trying Flatpak..."
-                # Fallback to Flatpak for Arch
-                print_status "Installing Mission Center via Flatpak as fallback..."
-                if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-                    print_success "Mission Center installed successfully via Flatpak"
-                else
-                    print_warning "Failed to install Mission Center via Flatpak"
-                    print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
-                fi
+                print_warning "Failed to install Mission Center via AUR"
+                print_warning "You can install it manually later with: yay -S mission-center"
             fi
         else
-            print_warning "yay not available, installing Mission Center via Flatpak..."
-            # Install via Flatpak when yay is not available
-            print_status "Installing Mission Center via Flatpak..."
-            if sudo flatpak install -y flathub io.missioncenter.MissionCenter 2>/dev/null; then
-                print_success "Mission Center installed successfully via Flatpak"
-            else
-                print_warning "Failed to install Mission Center via Flatpak"
-                print_warning "You can install it manually later with: flatpak install io.missioncenter.MissionCenter"
-            fi
+            print_warning "yay not available, skipping Mission Center installation"
+            print_warning "Install yay first, then run: yay -S mission-center"
         fi
+    else
+        print_status "Step 3: Skipping Mission Center installation (Debian system)"
     fi
 }
 
-# Step 5: Install rich-cli
+# Step 4: Install rich-cli
 install_rich_cli() {
-    print_status "Step 5: Installing rich-cli..."
+    print_status "Step 4: Installing rich-cli..."
     
     if [[ "$SYSTEM" == "debian" ]]; then
         # Install rich-cli via pipx for system-wide access
@@ -350,7 +224,6 @@ print_status "Starting software installation process..."
 # Execute installation steps in order
 update_system
 install_essential_software
-install_flatpak
 install_mission_center
 install_rich_cli
 
