@@ -6,10 +6,10 @@ ask_yes_no() {
     local response
     
     while true; do
-        echo -n "$question (y/n): "
+        echo -n "$question (Y/n): "
         read response </dev/tty
         case $response in
-            [Yy]* ) return 0;;
+            [Yy]* | "" ) return 0;;
             [Nn]* ) return 1;;
             * ) echo "Please answer yes (y) or no (n).";;
         esac
