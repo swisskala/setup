@@ -7,6 +7,8 @@ alias ls='ls --color=auto'
 alias lsd='lsd -lh'
 alias lsda='lsd -alh'
 alias startw='startplasma-wayland'
+alias gnome='XDG_SESSION_TYPE=wayland dbus-run-session gnome-session'
+alias gnomex='startx /usr/bin/gnome-session'
 alias stopx='i3-msg exit'
 alias ask='llm-remote -m claude-4-sonnet'
 
