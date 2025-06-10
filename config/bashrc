@@ -11,7 +11,7 @@ alias gnome='XDG_SESSION_TYPE=wayland dbus-run-session gnome-session'
 alias gnomex='startx /usr/bin/gnome-session'
 alias stopx='i3-msg exit'
 alias ask='llm-remote -m claude-4-sonnet'
-alias uefi='sudo reboot --firmware-setup'
+alias uefi='sudo systemctl reboot --firmware-setup'
 
 # Enhanced cd function - auto-list directory contents with lsd
 cd() {
