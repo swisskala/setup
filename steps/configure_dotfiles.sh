@@ -176,35 +176,51 @@ copy_i3_config() {
         print_warning "Skipping i3 configuration"
     fi
     
-    # Copy i3blocks.conf to /etc/
-    if [[ -f "$CONFIG_PATH/etc/i3blocks.conf" ]]; then
-        if [[ -f "/etc/i3blocks.conf" ]]; then
-            local backup_file="/etc/i3blocks.conf.backup.$(date +%Y%m%d_%H%M%S)"
-            sudo cp "/etc/i3blocks.conf" "$backup_file"
+    # Create .config/i3blocks directory if it doesn't exist
+    mkdir -p "$HOME/.config/i3blocks"
+    
+    # Copy i3blocks.conf to .config/i3blocks/config
+    if [[ -f "$CONFIG_PATH/i3blocks/config" ]]; then
+        if [[ -f "$HOME/.config/i3blocks/config" ]]; then
+            local backup_file="$HOME/.config/i3blocks/config.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/i3blocks/config" "$backup_file"
             print_status "Backup created: $backup_file"
         fi
         
-        print_status "Copying i3blocks.conf to /etc/ folder..."
-        sudo cp "$CONFIG_PATH/etc/i3blocks.conf" "/etc/i3blocks.conf"
+        print_status "Copying i3blocks configuration to .config/i3blocks folder..."
+        cp "$CONFIG_PATH/i3blocks/config" "$HOME/.config/i3blocks/config"
         print_success "i3blocks configuration copied successfully"
+    # Fallback: check for old location
+    elif [[ -f "$CONFIG_PATH/etc/i3blocks.conf" ]]; then
+        print_status "Found i3blocks.conf in old location, copying to .config/i3blocks/config..."
+        cp "$CONFIG_PATH/etc/i3blocks.conf" "$HOME/.config/i3blocks/config"
+        print_success "i3blocks configuration copied successfully (from old location)"
     else
-        print_warning "i3blocks.conf file not found in $CONFIG_PATH/etc/i3blocks.conf"
+        print_warning "i3blocks config file not found in $CONFIG_PATH/i3blocks/config"
         print_warning "Skipping i3blocks configuration"
     fi
     
-    # Copy i3status.conf to /etc/
-    if [[ -f "$CONFIG_PATH/etc/i3status.conf" ]]; then
-        if [[ -f "/etc/i3status.conf" ]]; then
-            local backup_file="/etc/i3status.conf.backup.$(date +%Y%m%d_%H%M%S)"
-            sudo cp "/etc/i3status.conf" "$backup_file"
+    # Create .config/i3status directory if it doesn't exist
+    mkdir -p "$HOME/.config/i3status"
+    
+    # Copy i3status.conf to .config/i3status/config
+    if [[ -f "$CONFIG_PATH/i3status/config" ]]; then
+        if [[ -f "$HOME/.config/i3status/config" ]]; then
+            local backup_file="$HOME/.config/i3status/config.backup.$(date +%Y%m%d_%H%M%S)"
+            cp "$HOME/.config/i3status/config" "$backup_file"
             print_status "Backup created: $backup_file"
         fi
         
-        print_status "Copying i3status.conf to /etc/ folder..."
-        sudo cp "$CONFIG_PATH/etc/i3status.conf" "/etc/i3status.conf"
+        print_status "Copying i3status configuration to .config/i3status folder..."
+        cp "$CONFIG_PATH/i3status/config" "$HOME/.config/i3status/config"
         print_success "i3status configuration copied successfully"
+    # Fallback: check for old location
+    elif [[ -f "$CONFIG_PATH/etc/i3status.conf" ]]; then
+        print_status "Found i3status.conf in old location, copying to .config/i3status/config..."
+        cp "$CONFIG_PATH/etc/i3status.conf" "$HOME/.config/i3status/config"
+        print_success "i3status configuration copied successfully (from old location)"
     else
-        print_warning "i3status.conf file not found in $CONFIG_PATH/etc/i3status.conf"
+        print_warning "i3status config file not found in $CONFIG_PATH/i3status/config"
         print_warning "Skipping i3status configuration"
     fi
 }
